@@ -107,7 +107,7 @@ function TeamSetupCard({ side, team, onChange, isServing, onSetServing }) {
   );
 }
 
-function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimmed, isServer, isRight, isLeft, teamKey, onLongPress }) {
+function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimmed, isServer, isRight, isLeft, teamKey, onPlayerTap }) {
   const numericPos = Number(pos);
   const baseScale = positionScale;
   const scale = isServer && isRight ? baseScale * 0.8 : baseScale;
@@ -121,21 +121,6 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
   const badgeTextSize = 3.8 * scale;
 
   const outwardShift = isServer ? (isLeft ? -10 : isRight ? 15 : 0) : 0;
-  const longPressTimerRef = React.useRef(null);
-
-  function handleMouseDown() {
-    longPressTimerRef.current = setTimeout(() => {
-      onLongPress?.(teamKey, pos, number);
-    }, 500);
-  }
-
-  function handleMouseUp() {
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-  }
-
-  function handleMouseLeave() {
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-  }
 
   return (
     <motion.g
@@ -143,9 +128,7 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
       animate={{ x: x + outwardShift, y, scale }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
       style={{ opacity: isDimmed ? DIM_OPACITY : 1, transformOrigin: "center center", cursor: "pointer" }}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
+      onClick={() => onPlayerTap?.(teamKey, pos, number)}
     >
       {isServer && (
         <circle cx="0" cy="0" r={13 * scale} fill="none" stroke="#facc15" strokeWidth={2.5 * scale} opacity="0.95" />
@@ -179,7 +162,7 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
   );
 }
 
-function CourtHalf({ side, team, isReceiving, isServing, onPlayerLongPress }) {
+function CourtHalf({ side, team, isReceiving, isServing, onPlayerTap }) {
   const coords = side === "left" ? LEFT_POSITIONS : RIGHT_POSITIONS;
   const teamKey = side === "left" ? "A" : "B";
   
@@ -210,7 +193,7 @@ function CourtHalf({ side, team, isReceiving, isServing, onPlayerLongPress }) {
             isServer={isServer}
             isRight={side === "right"}
             isLeft={side === "left"}
-            onLongPress={onPlayerLongPress}
+            onPlayerTap={onPlayerTap}
           />
         );
       })}
@@ -218,7 +201,7 @@ function CourtHalf({ side, team, isReceiving, isServing, onPlayerLongPress }) {
   );
 }
 
-function CourtView({ match, compact = false, onPlayerLongPress }) {
+function CourtView({ match, compact = false, onPlayerTap }) {
   const receivingTeam = match.servingTeam === "A" ? "B" : "A";
   const leftIsReceiving = receivingTeam === "A";
   const rightIsReceiving = receivingTeam === "B";
@@ -278,14 +261,14 @@ function CourtView({ match, compact = false, onPlayerLongPress }) {
             team={match.teams.A}
             isServing={match.servingTeam === "A"}
             isReceiving={receivingTeam === "A"}
-            onPlayerLongPress={onPlayerLongPress}
+            onPlayerTap={onPlayerTap}
           />
           <CourtHalf
             side="right"
             team={match.teams.B}
             isServing={match.servingTeam === "B"}
             isReceiving={receivingTeam === "B"}
-            onPlayerLongPress={onPlayerLongPress}
+            onPlayerTap={onPlayerTap}
           />
         </svg>
       </div>
@@ -317,7 +300,6 @@ export default function App() {
   const [substitutions, setSubstitutions] = useState({ A: {}, B: {} });
   const [longPressedPlayer, setLongPressedPlayer] = useState(null);
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
-  const longPressTimerRef = React.useRef(null);
 
   function updateTeam(teamKey, nextTeam) {
     setMatch((prev) => ({
@@ -329,7 +311,7 @@ export default function App() {
     }));
   }
 
-  function handlePlayerLongPress(teamKey, pos, currentPlayerNumber) {
+  function handlePlayerTap(teamKey, pos, currentPlayerNumber) {
     setLongPressedPlayer({ teamKey, pos, currentPlayerNumber });
     setIsSubMenuOpen(true);
   }
@@ -488,7 +470,7 @@ export default function App() {
               </button>
             </div>
             <div className="court-area">
-              <CourtView match={match} compact onPlayerLongPress={handlePlayerLongPress} />
+              <CourtView match={match} compact onPlayerTap={handlePlayerTap} />
             </div>
 
             {isSubMenuOpen && longPressedPlayer && (
