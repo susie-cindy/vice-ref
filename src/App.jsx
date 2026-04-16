@@ -6,6 +6,9 @@ const APP_BACKGROUND = "#dfe7e2";
 const FRONT_COLOR = "#f59e0b";
 const BACK_COLOR = "#10b981";
 const DIM_OPACITY = 0.35;
+const FRONT_ROW_POSITIONS = [2, 3, 4];
+const SERVER_POSITION = 1;
+const MotionGroup = motion.g;
 
 const LEFT_POSITIONS = {
   4: { x: 61, y: 14, scale: 0.8 },
@@ -64,6 +67,54 @@ function rotateClockwise(positions) {
   };
 }
 
+function isFrontRowPosition(pos) {
+  return FRONT_ROW_POSITIONS.includes(Number(pos));
+}
+
+function shouldShowLiberoForPlayer({ teamKey, playerNumber, pos, liberoTargets, liberoSuppressed }) {
+  const numericPos = Number(pos);
+  return Boolean(
+    liberoTargets[teamKey]?.[playerNumber] &&
+      !isFrontRowPosition(numericPos) &&
+      numericPos !== SERVER_POSITION &&
+      !liberoSuppressed[teamKey]?.[playerNumber]
+  );
+}
+
+function pruneFrontRowLiberoSuppressions(suppressed, teams) {
+  let changed = false;
+  const next = { A: {}, B: {} };
+
+  for (const teamKey of ["A", "B"]) {
+    const teamSuppressed = suppressed[teamKey] ?? {};
+    const positions = teams[teamKey]?.positions ?? {};
+
+    for (const [playerNumber, isSuppressed] of Object.entries(teamSuppressed)) {
+      if (!isSuppressed) {
+        changed = true;
+        continue;
+      }
+
+      const currentEntry = Object.entries(positions).find(([, currentPlayerNumber]) => currentPlayerNumber === playerNumber);
+      const currentPos = currentEntry ? Number(currentEntry[0]) : null;
+
+      if (isFrontRowPosition(currentPos)) {
+        changed = true;
+        continue;
+      }
+
+      next[teamKey][playerNumber] = true;
+    }
+
+    const activeCount = Object.values(teamSuppressed).filter(Boolean).length;
+    if (Object.keys(next[teamKey]).length !== activeCount) {
+      changed = true;
+    }
+  }
+
+  return changed ? next : suppressed;
+}
+
 function TeamSetupCard({ side, team, onChange, isServing, onSetServing }) {
   const order = [1, 2, 3, 4, 5, 6];
 
@@ -108,7 +159,6 @@ function TeamSetupCard({ side, team, onChange, isServing, onSetServing }) {
 }
 
 function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimmed, isServer, isRight, isLeft, teamKey, onPlayerTap, displayLabel }) {
-  const numericPos = Number(pos);
   const baseScale = positionScale;
   const scale = isServer && isRight ? baseScale * 0.8 : baseScale;
   const radius = (isServer ? 10.5 : 8.5) * scale;
@@ -124,7 +174,7 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
   const outwardShift = isServer ? (isLeft ? -10 : isRight ? 15 : 0) : 0;
 
   return (
-    <motion.g
+    <MotionGroup
       initial={false}
       animate={{ x: x + outwardShift, y, scale }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
@@ -160,7 +210,7 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
           </text>
         </g>
       )}
-    </motion.g>
+    </MotionGroup>
   );
 }
 
@@ -178,15 +228,10 @@ function CourtHalf({ side, team, isReceiving, isServing, onPlayerTap, liberoTarg
     <>
       {players.map(({ playerNumber, pos }) => {
         const point = coords[pos];
-        const isFront = [2, 3, 4].includes(pos);
+        const isFront = isFrontRowPosition(pos);
         const isServer = isServing && pos === 1;
         
-        // リベロ表示判定
-        const isBackRow = !isFront;
-        const shouldShowLibero =
-          liberoTargets[teamKey]?.[playerNumber] &&
-          isBackRow &&
-          !liberoSuppressed[teamKey]?.[playerNumber];
+        const shouldShowLibero = shouldShowLiberoForPlayer({ teamKey, playerNumber, pos, liberoTargets, liberoSuppressed });
         const displayLabel = shouldShowLibero ? "L" : playerNumber;
 
         return (
@@ -320,14 +365,20 @@ export default function App() {
   const [liberoTargets, setLiberoTargets] = useState({ A: {}, B: {} });
   const [liberoSuppressed, setLiberoSuppressed] = useState({ A: {}, B: {} });
 
+  function syncLiberoSuppressions(teams) {
+    setLiberoSuppressed((prev) => pruneFrontRowLiberoSuppressions(prev, teams));
+  }
+
   function updateTeam(teamKey, nextTeam) {
-    setMatch((prev) => ({
-      ...prev,
+    const nextMatch = {
+      ...match,
       teams: {
-        ...prev.teams,
+        ...match.teams,
         [teamKey]: nextTeam,
       },
-    }));
+    };
+    setMatch(nextMatch);
+    syncLiberoSuppressions(nextMatch.teams);
   }
 
   function handlePlayerTap(teamKey, pos, currentPlayerNumber) {
@@ -355,19 +406,21 @@ export default function App() {
       },
     }));
 
-    setMatch((prev) => ({
-      ...prev,
+    const nextMatch = {
+      ...match,
       teams: {
-        ...prev.teams,
+        ...match.teams,
         [teamKey]: {
-          ...prev.teams[teamKey],
+          ...match.teams[teamKey],
           positions: {
-            ...prev.teams[teamKey].positions,
+            ...match.teams[teamKey].positions,
             [pos]: newNumber,
           },
         },
       },
-    }));
+    };
+    setMatch(nextMatch);
+    syncLiberoSuppressions(nextMatch.teams);
 
     setIsNumberPickerOpen(false);
     setPendingSubTarget(null);
@@ -379,19 +432,21 @@ export default function App() {
     const { teamKey, pos, currentPlayerNumber } = longPressedPlayer;
     const original = substitutions[teamKey][currentPlayerNumber].original;
 
-    setMatch((prev) => ({
-      ...prev,
+    const nextMatch = {
+      ...match,
       teams: {
-        ...prev.teams,
+        ...match.teams,
         [teamKey]: {
-          ...prev.teams[teamKey],
+          ...match.teams[teamKey],
           positions: {
-            ...prev.teams[teamKey].positions,
+            ...match.teams[teamKey].positions,
             [pos]: original,
           },
         },
       },
-    }));
+    };
+    setMatch(nextMatch);
+    syncLiberoSuppressions(nextMatch.teams);
 
     setSubstitutions((prev) => ({
       ...prev,
@@ -463,28 +518,27 @@ export default function App() {
 
   function handleSideOut() {
     setHistory((prev) => [...prev, match]);
-    setMatch((prev) => {
-      const nextServingTeam = prev.servingTeam === "A" ? "B" : "A";
-      return {
-        ...prev,
-        servingTeam: nextServingTeam,
-        teams: {
-          ...prev.teams,
-          [nextServingTeam]: {
-            ...prev.teams[nextServingTeam],
-            positions: rotateClockwise(prev.teams[nextServingTeam].positions),
-          },
+    const nextServingTeam = match.servingTeam === "A" ? "B" : "A";
+    const nextMatch = {
+      ...match,
+      servingTeam: nextServingTeam,
+      teams: {
+        ...match.teams,
+        [nextServingTeam]: {
+          ...match.teams[nextServingTeam],
+          positions: rotateClockwise(match.teams[nextServingTeam].positions),
         },
-      };
-    });
-    // ローテーション後はリベロの抑制をリセット
-    setLiberoSuppressed({ A: {}, B: {} });
+      },
+    };
+    setMatch(nextMatch);
+    syncLiberoSuppressions(nextMatch.teams);
   }
 
   function handleUndo() {
     if (history.length === 0) return;
     const previous = history[history.length - 1];
     setMatch(previous);
+    syncLiberoSuppressions(previous.teams);
     setHistory((prev) => prev.slice(0, -1));
   }
 
@@ -616,10 +670,14 @@ export default function App() {
                   </button>
 
                   {(() => {
-                    const isBackRow = ![2, 3, 4].includes(longPressedPlayer.pos);
                     const isLiberoTarget = liberoTargets[longPressedPlayer.teamKey]?.[longPressedPlayer.currentPlayerNumber];
-                    const isLiberoSuppressed = liberoSuppressed[longPressedPlayer.teamKey]?.[longPressedPlayer.currentPlayerNumber];
-                    const shouldShowLibero = isLiberoTarget && isBackRow && !isLiberoSuppressed;
+                    const shouldShowLibero = shouldShowLiberoForPlayer({
+                      teamKey: longPressedPlayer.teamKey,
+                      playerNumber: longPressedPlayer.currentPlayerNumber,
+                      pos: longPressedPlayer.pos,
+                      liberoTargets,
+                      liberoSuppressed,
+                    });
 
                     if (!isLiberoTarget) {
                       return (
