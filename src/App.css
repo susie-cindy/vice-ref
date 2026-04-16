@@ -199,11 +199,17 @@ body {
   font-size: 1rem;
   font-weight: 700;
   color: #0f172a;
+  cursor: pointer;
+  text-align: left;
 }
 
 .team-card__input:focus {
   outline: 2px solid #a5b4fc;
   outline-offset: 2px;
+}
+
+.team-card__input:hover {
+  border-color: #94a3b8;
 }
 
 .court-card {

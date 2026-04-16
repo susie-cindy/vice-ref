@@ -8,6 +8,7 @@ const BACK_COLOR = "#10b981";
 const DIM_OPACITY = 0.35;
 const FRONT_ROW_POSITIONS = [2, 3, 4];
 const SERVER_POSITION = 1;
+const PLAYER_NUMBER_OPTIONS = Array.from({ length: 14 }, (_, i) => i + 1);
 const MotionGroup = motion.g;
 
 const LEFT_POSITIONS = {
@@ -115,7 +116,100 @@ function pruneFrontRowLiberoSuppressions(suppressed, teams) {
   return changed ? next : suppressed;
 }
 
-function TeamSetupCard({ side, team, onChange, isServing, onSetServing }) {
+function NumberPickerModal({ title, numbers, isNumberDisabled, onSelect, onCancel, onClear }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.3)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+      }}
+      onClick={onCancel}
+    >
+      <div
+        style={{
+          backgroundColor: "#fff",
+          borderRadius: "8px",
+          padding: "20px",
+          minWidth: "280px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ marginBottom: "16px", fontSize: "14px", fontWeight: "600", textAlign: "center" }}>{title}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "16px" }}>
+          {numbers.map((num) => {
+            const numberText = num.toString();
+            const isDisabled = isNumberDisabled(numberText);
+            return (
+              <button
+                key={num}
+                onClick={() => !isDisabled && onSelect(numberText)}
+                disabled={isDisabled}
+                style={{
+                  padding: "12px",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  border: "none",
+                  borderRadius: "4px",
+                  backgroundColor: isDisabled ? "#d1d5db" : "#3b82f6",
+                  color: "#fff",
+                  cursor: isDisabled ? "not-allowed" : "pointer",
+                  opacity: isDisabled ? 0.5 : 1,
+                }}
+              >
+                {num}
+              </button>
+            );
+          })}
+        </div>
+        {onClear && (
+          <button
+            onClick={onClear}
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "12px",
+              marginBottom: "8px",
+              backgroundColor: "#ef4444",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: "600",
+            }}
+          >
+            クリア
+          </button>
+        )}
+        <button
+          onClick={onCancel}
+          style={{
+            display: "block",
+            width: "100%",
+            padding: "12px",
+            backgroundColor: "#6b7280",
+            color: "#fff",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontSize: "14px",
+            fontWeight: "600",
+          }}
+        >
+          キャンセル
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TeamSetupCard({ side, team, isServing, onSetServing, onPositionTap }) {
   const order = [1, 2, 3, 4, 5, 6];
 
   return (
@@ -135,23 +229,16 @@ function TeamSetupCard({ side, team, onChange, isServing, onSetServing }) {
 
       <div className="team-card__grid">
         {order.map((pos) => (
-          <label key={pos} className="team-card__field">
+          <div key={pos} className="team-card__field">
             <div className="team-card__field-label">位置 P{pos}</div>
-            <input
+            <button
+              type="button"
               className="team-card__input"
-              value={team.positions[pos]}
-              onChange={(e) =>
-                onChange({
-                  ...team,
-                  positions: {
-                    ...team.positions,
-                    [pos]: e.target.value,
-                  },
-                })
-              }
-              placeholder={`P${pos} の背番号`}
-            />
-          </label>
+              onClick={() => onPositionTap(pos)}
+            >
+              {team.positions[pos] || "背番号を選択"}
+            </button>
+          </div>
         ))}
       </div>
     </div>
@@ -362,6 +449,7 @@ export default function App() {
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
   const [isNumberPickerOpen, setIsNumberPickerOpen] = useState(false);
   const [pendingSubTarget, setPendingSubTarget] = useState(null);
+  const [lineupNumberPickerTarget, setLineupNumberPickerTarget] = useState(null);
   const [liberoTargets, setLiberoTargets] = useState({ A: {}, B: {} });
   const [liberoSuppressed, setLiberoSuppressed] = useState({ A: {}, B: {} });
 
@@ -369,23 +457,41 @@ export default function App() {
     setLiberoSuppressed((prev) => pruneFrontRowLiberoSuppressions(prev, teams));
   }
 
-  function updateTeam(teamKey, nextTeam) {
-    const nextMatch = {
-      ...match,
-      teams: {
-        ...match.teams,
-        [teamKey]: nextTeam,
-      },
-    };
-    setMatch(nextMatch);
-    syncLiberoSuppressions(nextMatch.teams);
-  }
-
   function toggleInitialServingTeam(teamKey) {
     setMatch((prev) => ({
       ...prev,
       servingTeam: prev.servingTeam === teamKey ? (teamKey === "A" ? "B" : "A") : teamKey,
     }));
+  }
+
+  function openLineupNumberPicker(teamKey, pos) {
+    setLineupNumberPickerTarget({ teamKey, pos });
+  }
+
+  function handleSelectLineupNumber(playerNumber) {
+    if (!lineupNumberPickerTarget) return;
+    const { teamKey, pos } = lineupNumberPickerTarget;
+    const nextMatch = {
+      ...match,
+      teams: {
+        ...match.teams,
+        [teamKey]: {
+          ...match.teams[teamKey],
+          positions: {
+            ...match.teams[teamKey].positions,
+            [pos]: playerNumber,
+          },
+        },
+      },
+    };
+    setMatch(nextMatch);
+    syncLiberoSuppressions(nextMatch.teams);
+    setLineupNumberPickerTarget(null);
+  }
+
+  function handleClearLineupNumber() {
+    if (!lineupNumberPickerTarget) return;
+    handleSelectLineupNumber("");
   }
 
   function handlePlayerTap(teamKey, pos, currentPlayerNumber) {
@@ -591,14 +697,14 @@ export default function App() {
               team={match.teams.A}
               isServing={match.servingTeam === "A"}
               onSetServing={() => toggleInitialServingTeam("A")}
-              onChange={(nextTeam) => updateTeam("A", nextTeam)}
+              onPositionTap={(pos) => openLineupNumberPicker("A", pos)}
             />
             <TeamSetupCard
               side="B"
               team={match.teams.B}
               isServing={match.servingTeam === "B"}
               onSetServing={() => toggleInitialServingTeam("B")}
-              onChange={(nextTeam) => updateTeam("B", nextTeam)}
+              onPositionTap={(pos) => openLineupNumberPicker("B", pos)}
             />
           </div>
         ) : (
@@ -766,69 +872,29 @@ export default function App() {
             )}
 
             {isNumberPickerOpen && pendingSubTarget && (
-              <div style={{
-                position: "fixed",
-                inset: 0,
-                backgroundColor: "rgba(0,0,0,0.3)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 1000
-              }} onClick={() => setIsNumberPickerOpen(false)}>
-                <div style={{
-                  backgroundColor: "#fff",
-                  borderRadius: "8px",
-                  padding: "20px",
-                  minWidth: "280px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-                }} onClick={(e) => e.stopPropagation()}>
-                  <div style={{ marginBottom: "16px", fontSize: "14px", fontWeight: "600", textAlign: "center" }}>
-                    交代選手の背番号を選択
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "16px" }}>
-                    {Array.from({ length: 14 }, (_, i) => i + 1).map((num) => {
-                      const usedNumbers = Object.values(match.teams[pendingSubTarget.teamKey].positions);
-                      const isUsed = usedNumbers.includes(num.toString());
-                      return (
-                        <button
-                          key={num}
-                          onClick={() => !isUsed && handleSelectSubstituteNumber(num.toString())}
-                          disabled={isUsed}
-                          style={{
-                            padding: "12px",
-                            fontSize: "16px",
-                            fontWeight: "600",
-                            border: "none",
-                            borderRadius: "4px",
-                            backgroundColor: isUsed ? "#d1d5db" : "#3b82f6",
-                            color: "#fff",
-                            cursor: isUsed ? "not-allowed" : "pointer",
-                            opacity: isUsed ? 0.5 : 1,
-                          }}
-                        >
-                          {num}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <button onClick={() => setIsNumberPickerOpen(false)} style={{
-                    display: "block",
-                    width: "100%",
-                    padding: "12px",
-                    backgroundColor: "#6b7280",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: "600"
-                  }}>
-                    キャンセル
-                  </button>
-                </div>
-              </div>
+              <NumberPickerModal
+                title="交代選手の背番号を選択"
+                numbers={PLAYER_NUMBER_OPTIONS}
+                isNumberDisabled={(numberText) => Object.values(match.teams[pendingSubTarget.teamKey].positions).includes(numberText)}
+                onSelect={handleSelectSubstituteNumber}
+                onCancel={() => setIsNumberPickerOpen(false)}
+              />
             )}
           </div>
+        )}
+        {lineupNumberPickerTarget && (
+          <NumberPickerModal
+            title={`P${lineupNumberPickerTarget.pos} の背番号を選択`}
+            numbers={PLAYER_NUMBER_OPTIONS}
+            isNumberDisabled={(numberText) =>
+              Object.entries(match.teams[lineupNumberPickerTarget.teamKey].positions).some(
+                ([pos, currentPlayerNumber]) => Number(pos) !== Number(lineupNumberPickerTarget.pos) && currentPlayerNumber === numberText
+              )
+            }
+            onSelect={handleSelectLineupNumber}
+            onCancel={() => setLineupNumberPickerTarget(null)}
+            onClear={handleClearLineupNumber}
+          />
         )}
       </div>
     </div>
