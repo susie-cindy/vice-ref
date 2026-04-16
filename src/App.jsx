@@ -222,15 +222,13 @@ function NumberPickerModal({ title, numbers, isNumberDisabled, onSelect, onCance
 
 function TeamSetupCard({ side, team, isServing, onSetServing, onPositionTap, onClearPositions }) {
   const order = [1, 2, 3, 4, 5, 6];
+  const teamLabel = side === "A" ? "Aチーム（左側）" : "Bチーム（右側）";
 
   return (
     <div className="team-card">
       <div className="team-card__header">
         <div className="team-card__identity">
-          <div>
-            <div className="team-card__label">{side}チーム</div>
-            <div className="team-card__name">{team.name}</div>
-          </div>
+          <div className="team-card__label">{teamLabel}</div>
           <button type="button" className="team-card__clear" onClick={onClearPositions}>
             オールクリア
           </button>

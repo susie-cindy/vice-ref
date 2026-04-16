@@ -148,15 +148,9 @@ body {
 }
 
 .team-card__label {
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: #64748b;
-}
-
-.team-card__name {
   font-size: 1rem;
   font-weight: 700;
+  color: #0f172a;
 }
 
 .team-card__clear {
