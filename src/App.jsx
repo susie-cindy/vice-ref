@@ -68,6 +68,17 @@ function rotateClockwise(positions) {
   };
 }
 
+function createEmptyPositions() {
+  return {
+    1: "",
+    2: "",
+    3: "",
+    4: "",
+    5: "",
+    6: "",
+  };
+}
+
 function isFrontRowPosition(pos) {
   return FRONT_ROW_POSITIONS.includes(Number(pos));
 }
@@ -209,15 +220,20 @@ function NumberPickerModal({ title, numbers, isNumberDisabled, onSelect, onCance
   );
 }
 
-function TeamSetupCard({ side, team, isServing, onSetServing, onPositionTap }) {
+function TeamSetupCard({ side, team, isServing, onSetServing, onPositionTap, onClearPositions }) {
   const order = [1, 2, 3, 4, 5, 6];
 
   return (
     <div className="team-card">
       <div className="team-card__header">
-        <div>
-          <div className="team-card__label">{side}チーム</div>
-          <div className="team-card__name">{team.name}</div>
+        <div className="team-card__identity">
+          <div>
+            <div className="team-card__label">{side}チーム</div>
+            <div className="team-card__name">{team.name}</div>
+          </div>
+          <button type="button" className="team-card__clear" onClick={onClearPositions}>
+            オールクリア
+          </button>
         </div>
         <button
           className={`team-card__set-serving ${isServing ? "team-card__set-serving--active" : ""}`}
@@ -494,6 +510,21 @@ export default function App() {
     handleSelectLineupNumber("");
   }
 
+  function handleClearTeamPositions(teamKey) {
+    const nextMatch = {
+      ...match,
+      teams: {
+        ...match.teams,
+        [teamKey]: {
+          ...match.teams[teamKey],
+          positions: createEmptyPositions(),
+        },
+      },
+    };
+    setMatch(nextMatch);
+    syncLiberoSuppressions(nextMatch.teams);
+  }
+
   function handlePlayerTap(teamKey, pos, currentPlayerNumber) {
     setLongPressedPlayer({ teamKey, pos, currentPlayerNumber });
     setIsSubMenuOpen(true);
@@ -698,6 +729,7 @@ export default function App() {
               isServing={match.servingTeam === "A"}
               onSetServing={() => toggleInitialServingTeam("A")}
               onPositionTap={(pos) => openLineupNumberPicker("A", pos)}
+              onClearPositions={() => handleClearTeamPositions("A")}
             />
             <TeamSetupCard
               side="B"
@@ -705,6 +737,7 @@ export default function App() {
               isServing={match.servingTeam === "B"}
               onSetServing={() => toggleInitialServingTeam("B")}
               onPositionTap={(pos) => openLineupNumberPicker("B", pos)}
+              onClearPositions={() => handleClearTeamPositions("B")}
             />
           </div>
         ) : (

@@ -140,6 +140,13 @@ body {
   gap: 12px;
 }
 
+.team-card__identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .team-card__label {
   font-size: 0.78rem;
   text-transform: uppercase;
@@ -150,6 +157,22 @@ body {
 .team-card__name {
   font-size: 1rem;
   font-weight: 700;
+}
+
+.team-card__clear {
+  min-height: 38px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0 12px;
+  background: #fff7f7;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.team-card__clear:hover {
+  background: #fee2e2;
 }
 
 .team-card__set-serving {
