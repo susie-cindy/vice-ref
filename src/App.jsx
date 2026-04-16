@@ -129,7 +129,7 @@ function TeamSetupCard({ side, team, onChange, isServing, onSetServing }) {
           className={`team-card__set-serving ${isServing ? "team-card__set-serving--active" : ""}`}
           onClick={onSetServing}
         >
-          {isServing ? "現在サーブ中" : "先にサーブ"}
+          {isServing ? "サーブ権" : "レセプション"}
         </button>
       </div>
 
@@ -381,6 +381,13 @@ export default function App() {
     syncLiberoSuppressions(nextMatch.teams);
   }
 
+  function toggleInitialServingTeam(teamKey) {
+    setMatch((prev) => ({
+      ...prev,
+      servingTeam: prev.servingTeam === teamKey ? (teamKey === "A" ? "B" : "A") : teamKey,
+    }));
+  }
+
   function handlePlayerTap(teamKey, pos, currentPlayerNumber) {
     setLongPressedPlayer({ teamKey, pos, currentPlayerNumber });
     setIsSubMenuOpen(true);
@@ -583,14 +590,14 @@ export default function App() {
               side="A"
               team={match.teams.A}
               isServing={match.servingTeam === "A"}
-              onSetServing={() => setMatch((prev) => ({ ...prev, servingTeam: "A" }))}
+              onSetServing={() => toggleInitialServingTeam("A")}
               onChange={(nextTeam) => updateTeam("A", nextTeam)}
             />
             <TeamSetupCard
               side="B"
               team={match.teams.B}
               isServing={match.servingTeam === "B"}
-              onSetServing={() => setMatch((prev) => ({ ...prev, servingTeam: "B" }))}
+              onSetServing={() => toggleInitialServingTeam("B")}
               onChange={(nextTeam) => updateTeam("B", nextTeam)}
             />
           </div>
