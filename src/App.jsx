@@ -300,6 +300,8 @@ export default function App() {
   const [substitutions, setSubstitutions] = useState({ A: {}, B: {} });
   const [longPressedPlayer, setLongPressedPlayer] = useState(null);
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
+  const [isNumberPickerOpen, setIsNumberPickerOpen] = useState(false);
+  const [pendingSubTarget, setPendingSubTarget] = useState(null);
 
   function updateTeam(teamKey, nextTeam) {
     setMatch((prev) => ({
@@ -319,8 +321,14 @@ export default function App() {
   function handleSubstitute() {
     if (!longPressedPlayer) return;
     const { teamKey, pos, currentPlayerNumber } = longPressedPlayer;
-    const newNumber = prompt(`P${pos} の新しい背番号を入力してください：`, "");
-    if (newNumber === null || newNumber === "") return;
+    setPendingSubTarget({ teamKey, pos, currentPlayerNumber });
+    setIsNumberPickerOpen(true);
+    setIsSubMenuOpen(false);
+  }
+
+  function handleSelectSubstituteNumber(newNumber) {
+    if (!pendingSubTarget) return;
+    const { teamKey, pos, currentPlayerNumber } = pendingSubTarget;
 
     setSubstitutions((prev) => ({
       ...prev,
@@ -344,7 +352,8 @@ export default function App() {
       },
     }));
 
-    setIsSubMenuOpen(false);
+    setIsNumberPickerOpen(false);
+    setPendingSubTarget(null);
     setLongPressedPlayer(null);
   }
 
@@ -528,6 +537,70 @@ export default function App() {
                     元に戻す
                   </button>
                   <button onClick={() => setIsSubMenuOpen(false)} style={{
+                    display: "block",
+                    width: "100%",
+                    padding: "12px",
+                    backgroundColor: "#6b7280",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "600"
+                  }}>
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isNumberPickerOpen && pendingSubTarget && (
+              <div style={{
+                position: "fixed",
+                inset: 0,
+                backgroundColor: "rgba(0,0,0,0.3)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 1000
+              }} onClick={() => setIsNumberPickerOpen(false)}>
+                <div style={{
+                  backgroundColor: "#fff",
+                  borderRadius: "8px",
+                  padding: "20px",
+                  minWidth: "280px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                }} onClick={(e) => e.stopPropagation()}>
+                  <div style={{ marginBottom: "16px", fontSize: "14px", fontWeight: "600", textAlign: "center" }}>
+                    交代選手の背番号を選択
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "16px" }}>
+                    {Array.from({ length: 14 }, (_, i) => i + 1).map((num) => {
+                      const usedNumbers = Object.values(match.teams[pendingSubTarget.teamKey].positions);
+                      const isUsed = usedNumbers.includes(num.toString());
+                      return (
+                        <button
+                          key={num}
+                          onClick={() => !isUsed && handleSelectSubstituteNumber(num.toString())}
+                          disabled={isUsed}
+                          style={{
+                            padding: "12px",
+                            fontSize: "16px",
+                            fontWeight: "600",
+                            border: "none",
+                            borderRadius: "4px",
+                            backgroundColor: isUsed ? "#d1d5db" : "#3b82f6",
+                            color: "#fff",
+                            cursor: isUsed ? "not-allowed" : "pointer",
+                            opacity: isUsed ? 0.5 : 1,
+                          }}
+                        >
+                          {num}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button onClick={() => setIsNumberPickerOpen(false)} style={{
                     display: "block",
                     width: "100%",
                     padding: "12px",
