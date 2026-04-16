@@ -326,7 +326,7 @@ export default function App() {
       ...prev,
       [teamKey]: {
         ...prev[teamKey],
-        [pos]: { original: currentPlayerNumber, current: newNumber },
+        [newNumber]: { original: currentPlayerNumber },
       },
     }));
 
@@ -349,9 +349,9 @@ export default function App() {
   }
 
   function handleUndoSubstitution() {
-    if (!longPressedPlayer || !substitutions[longPressedPlayer.teamKey]?.[longPressedPlayer.pos]) return;
-    const { teamKey, pos } = longPressedPlayer;
-    const original = substitutions[teamKey][pos].original;
+    if (!longPressedPlayer || !substitutions[longPressedPlayer.teamKey]?.[longPressedPlayer.currentPlayerNumber]) return;
+    const { teamKey, pos, currentPlayerNumber } = longPressedPlayer;
+    const original = substitutions[teamKey][currentPlayerNumber].original;
 
     setMatch((prev) => ({
       ...prev,
@@ -371,7 +371,7 @@ export default function App() {
       ...prev,
       [teamKey]: {
         ...prev[teamKey],
-        [pos]: undefined,
+        [currentPlayerNumber]: undefined,
       },
     }));
 
@@ -510,17 +510,17 @@ export default function App() {
                   </button>
                   <button
                     onClick={handleUndoSubstitution}
-                    disabled={!substitutions[longPressedPlayer.teamKey]?.[longPressedPlayer.pos]}
+                    disabled={!substitutions[longPressedPlayer.teamKey]?.[longPressedPlayer.currentPlayerNumber]}
                     style={{
                       display: "block",
                       width: "100%",
                       padding: "12px",
                       marginBottom: "8px",
-                      backgroundColor: substitutions[longPressedPlayer.teamKey]?.[longPressedPlayer.pos] ? "#10b981" : "#d1d5db",
+                      backgroundColor: substitutions[longPressedPlayer.teamKey]?.[longPressedPlayer.currentPlayerNumber] ? "#10b981" : "#d1d5db",
                       color: "#fff",
                       border: "none",
                       borderRadius: "4px",
-                      cursor: substitutions[longPressedPlayer.teamKey]?.[longPressedPlayer.pos] ? "pointer" : "not-allowed",
+                      cursor: substitutions[longPressedPlayer.teamKey]?.[longPressedPlayer.currentPlayerNumber] ? "pointer" : "not-allowed",
                       fontSize: "14px",
                       fontWeight: "600"
                     }}
