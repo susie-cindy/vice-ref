@@ -40,12 +40,22 @@ body {
   padding: 8px;
 }
 
+.app-shell--setup {
+  gap: 5px;
+  padding: 5px;
+}
+
 .app-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   padding: 0 4px;
+}
+
+.app-shell--setup .app-header {
+  gap: 6px;
+  padding: 0 2px;
 }
 
 .app-header--live {
@@ -68,6 +78,10 @@ body {
   gap: 4px;
 }
 
+.app-shell--setup .app-header__brand {
+  gap: 1px;
+}
+
 .app-header__label {
   font-size: 0.78rem;
   font-weight: 700;
@@ -76,16 +90,30 @@ body {
   color: #64748b;
 }
 
+.app-shell--setup .app-header__label {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+}
+
 .app-header__title {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 800;
 }
 
+.app-shell--setup .app-header__title {
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
 .app-mode-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.app-shell--setup .app-mode-tabs {
+  gap: 5px;
 }
 
 .app-mode-button {
@@ -99,6 +127,14 @@ body {
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+}
+
+.app-shell--setup .app-mode-button {
+  min-height: 40px;
+  border-radius: 12px;
+  padding: 0 10px;
+  font-size: 0.88rem;
+  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.06);
 }
 
 .app-mode-button--active {
@@ -115,12 +151,21 @@ body {
   overflow: hidden;
 }
 
+.app-shell--setup .app-screen {
+  gap: 6px;
+}
+
 .setup-screen {
   display: flex;
   flex-direction: column;
   gap: 10px;
   overflow-y: auto;
   padding-right: 4px;
+}
+
+.app-shell--setup .setup-screen {
+  gap: 6px;
+  padding-right: 2px;
 }
 
 .team-card {
@@ -133,11 +178,22 @@ body {
   gap: 14px;
 }
 
+.app-shell--setup .team-card {
+  border-radius: 16px;
+  padding: 9px;
+  gap: 8px;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+}
+
 .team-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.app-shell--setup .team-card__header {
+  gap: 8px;
 }
 
 .team-card__identity {
@@ -147,10 +203,18 @@ body {
   flex-wrap: wrap;
 }
 
+.app-shell--setup .team-card__identity {
+  gap: 6px;
+}
+
 .team-card__label {
   font-size: 1rem;
   font-weight: 700;
   color: #0f172a;
+}
+
+.app-shell--setup .team-card__label {
+  font-size: 0.92rem;
 }
 
 .team-card__clear {
@@ -163,6 +227,12 @@ body {
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.app-shell--setup .team-card__clear {
+  min-height: 34px;
+  padding: 0 9px;
+  font-size: 0.78rem;
 }
 
 .team-card__clear:hover {
@@ -181,6 +251,13 @@ body {
   color: #0f172a;
 }
 
+.app-shell--setup .team-card__set-serving {
+  min-height: 38px;
+  border-radius: 12px;
+  padding: 0 12px;
+  font-size: 0.86rem;
+}
+
 .team-card__set-serving--active {
   background: #0f172a;
   color: #fff;
@@ -192,6 +269,10 @@ body {
   gap: 10px;
 }
 
+.app-shell--setup .team-card__grid {
+  gap: 6px;
+}
+
 .team-card__field {
   display: flex;
   flex-direction: column;
@@ -201,9 +282,20 @@ body {
   background: #f8fafc;
 }
 
+.app-shell--setup .team-card__field {
+  gap: 3px;
+  padding: 7px;
+  border-radius: 12px;
+}
+
 .team-card__field-label {
   font-size: 0.82rem;
   color: #475569;
+}
+
+.app-shell--setup .team-card__field-label {
+  font-size: 0.74rem;
+  line-height: 1.15;
 }
 
 .team-card__input {
@@ -218,6 +310,13 @@ body {
   color: #0f172a;
   cursor: pointer;
   text-align: left;
+}
+
+.app-shell--setup .team-card__input {
+  min-height: 40px;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
 }
 
 .team-card__input:focus {
@@ -396,6 +495,29 @@ body {
 
   .team-card__grid {
     grid-template-columns: 1fr;
+  }
+
+  .app-shell--setup .app-header {
+    gap: 4px;
+  }
+
+  .app-shell--setup .app-mode-tabs {
+    flex-wrap: nowrap;
+  }
+
+  .app-shell--setup .app-mode-button {
+    flex: 1;
+    min-height: 36px;
+    padding: 0 8px;
+    font-size: 0.82rem;
+  }
+
+  .app-shell--setup .team-card__header {
+    align-items: center;
+  }
+
+  .app-shell--setup .team-card__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .action-grid {

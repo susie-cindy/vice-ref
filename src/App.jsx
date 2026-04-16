@@ -694,7 +694,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell" style={{ backgroundColor: APP_BACKGROUND }}>
+    <div className={`app-shell app-shell--${mode}`} style={{ backgroundColor: APP_BACKGROUND }}>
       <div className={`app-header ${mode === "live" ? "app-header--hidden" : ""}`}>
         {mode !== "live" && (
           <div className="app-header__brand">
