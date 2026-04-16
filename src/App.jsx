@@ -107,7 +107,7 @@ function TeamSetupCard({ side, team, onChange, isServing, onSetServing }) {
   );
 }
 
-function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimmed, isServer, isRight, isLeft, teamKey, onPlayerTap }) {
+function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimmed, isServer, isRight, isLeft, teamKey, onPlayerTap, displayLabel }) {
   const numericPos = Number(pos);
   const baseScale = positionScale;
   const scale = isServer && isRight ? baseScale * 0.8 : baseScale;
@@ -115,6 +115,7 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
   const strokeWidth = (isServer ? 2.8 : 0) * scale;
   const strokeColor = isServer ? "#111827" : "transparent";
   const numberFontSize = (isServer ? 9 : 8) * scale;
+  const isLiberoDisplay = displayLabel === "L";
   const badgeWidth = 8 * scale;
   const badgeHeight = 6 * scale;
   const badgeTransform = `translate(${11 * scale},-${8 * scale})`;
@@ -138,6 +139,7 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
         fill={isFront ? FRONT_COLOR : BACK_COLOR}
         stroke={strokeColor}
         strokeWidth={strokeWidth}
+        opacity={isLiberoDisplay ? 0.9 : 1}
       />
       <text
         x="0"
@@ -146,9 +148,9 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
         dominantBaseline="middle"
         fontSize={numberFontSize}
         fontWeight="800"
-        fill="#111"
+        fill={isLiberoDisplay ? "#dc2626" : "#111"}
       >
-        {number}
+        {displayLabel}
       </text>
       {isServer && (
         <g transform={badgeTransform}>
@@ -162,7 +164,7 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
   );
 }
 
-function CourtHalf({ side, team, isReceiving, isServing, onPlayerTap }) {
+function CourtHalf({ side, team, isReceiving, isServing, onPlayerTap, liberoTargets, liberoSuppressed }) {
   const coords = side === "left" ? LEFT_POSITIONS : RIGHT_POSITIONS;
   const teamKey = side === "left" ? "A" : "B";
   
@@ -178,6 +180,14 @@ function CourtHalf({ side, team, isReceiving, isServing, onPlayerTap }) {
         const point = coords[pos];
         const isFront = [2, 3, 4].includes(pos);
         const isServer = isServing && pos === 1;
+        
+        // リベロ表示判定
+        const isBackRow = !isFront;
+        const shouldShowLibero =
+          liberoTargets[teamKey]?.[playerNumber] &&
+          isBackRow &&
+          !liberoSuppressed[teamKey]?.[playerNumber];
+        const displayLabel = shouldShowLibero ? "L" : playerNumber;
 
         return (
           <PlayerMarker
@@ -194,6 +204,7 @@ function CourtHalf({ side, team, isReceiving, isServing, onPlayerTap }) {
             isRight={side === "right"}
             isLeft={side === "left"}
             onPlayerTap={onPlayerTap}
+            displayLabel={displayLabel}
           />
         );
       })}
@@ -201,7 +212,7 @@ function CourtHalf({ side, team, isReceiving, isServing, onPlayerTap }) {
   );
 }
 
-function CourtView({ match, compact = false, onPlayerTap }) {
+function CourtView({ match, compact = false, onPlayerTap, liberoTargets, liberoSuppressed }) {
   const receivingTeam = match.servingTeam === "A" ? "B" : "A";
   const leftIsReceiving = receivingTeam === "A";
   const rightIsReceiving = receivingTeam === "B";
@@ -262,6 +273,8 @@ function CourtView({ match, compact = false, onPlayerTap }) {
             isServing={match.servingTeam === "A"}
             isReceiving={receivingTeam === "A"}
             onPlayerTap={onPlayerTap}
+            liberoTargets={liberoTargets}
+            liberoSuppressed={liberoSuppressed}
           />
           <CourtHalf
             side="right"
@@ -269,6 +282,8 @@ function CourtView({ match, compact = false, onPlayerTap }) {
             isServing={match.servingTeam === "B"}
             isReceiving={receivingTeam === "B"}
             onPlayerTap={onPlayerTap}
+            liberoTargets={liberoTargets}
+            liberoSuppressed={liberoSuppressed}
           />
         </svg>
       </div>
@@ -302,6 +317,8 @@ export default function App() {
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
   const [isNumberPickerOpen, setIsNumberPickerOpen] = useState(false);
   const [pendingSubTarget, setPendingSubTarget] = useState(null);
+  const [liberoTargets, setLiberoTargets] = useState({ A: {}, B: {} });
+  const [liberoSuppressed, setLiberoSuppressed] = useState({ A: {}, B: {} });
 
   function updateTeam(teamKey, nextTeam) {
     setMatch((prev) => ({
@@ -388,6 +405,62 @@ export default function App() {
     setLongPressedPlayer(null);
   }
 
+  function handleSetLiberoTarget() {
+    if (!longPressedPlayer) return;
+    const { teamKey, currentPlayerNumber } = longPressedPlayer;
+    
+    setLiberoTargets((prev) => ({
+      ...prev,
+      [teamKey]: {
+        ...prev[teamKey],
+        [currentPlayerNumber]: true,
+      },
+    }));
+
+    setIsSubMenuOpen(false);
+    setLongPressedPlayer(null);
+  }
+
+  function handleRevertLibero() {
+    if (!longPressedPlayer) return;
+    const { teamKey, currentPlayerNumber } = longPressedPlayer;
+    
+    setLiberoSuppressed((prev) => ({
+      ...prev,
+      [teamKey]: {
+        ...prev[teamKey],
+        [currentPlayerNumber]: true,
+      },
+    }));
+
+    setIsSubMenuOpen(false);
+    setLongPressedPlayer(null);
+  }
+
+  function handleRemoveLiberoTarget() {
+    if (!longPressedPlayer) return;
+    const { teamKey, currentPlayerNumber } = longPressedPlayer;
+    
+    setLiberoTargets((prev) => ({
+      ...prev,
+      [teamKey]: {
+        ...prev[teamKey],
+        [currentPlayerNumber]: undefined,
+      },
+    }));
+
+    setLiberoSuppressed((prev) => ({
+      ...prev,
+      [teamKey]: {
+        ...prev[teamKey],
+        [currentPlayerNumber]: undefined,
+      },
+    }));
+
+    setIsSubMenuOpen(false);
+    setLongPressedPlayer(null);
+  }
+
   function handleSideOut() {
     setHistory((prev) => [...prev, match]);
     setMatch((prev) => {
@@ -404,6 +477,8 @@ export default function App() {
         },
       };
     });
+    // ローテーション後はリベロの抑制をリセット
+    setLiberoSuppressed({ A: {}, B: {} });
   }
 
   function handleUndo() {
@@ -416,6 +491,9 @@ export default function App() {
   function handleReset() {
     setMatch(INITIAL_MATCH);
     setHistory([]);
+    setSubstitutions({ A: {}, B: {} });
+    setLiberoTargets({ A: {}, B: {} });
+    setLiberoSuppressed({ A: {}, B: {} });
     setMode("setup");
   }
 
@@ -479,7 +557,7 @@ export default function App() {
               </button>
             </div>
             <div className="court-area">
-              <CourtView match={match} compact onPlayerTap={handlePlayerTap} />
+              <CourtView match={match} compact onPlayerTap={handlePlayerTap} liberoTargets={liberoTargets} liberoSuppressed={liberoSuppressed} />
             </div>
 
             {isSubMenuOpen && longPressedPlayer && (
@@ -536,6 +614,74 @@ export default function App() {
                   >
                     元に戻す
                   </button>
+
+                  {(() => {
+                    const isBackRow = ![2, 3, 4].includes(longPressedPlayer.pos);
+                    const isLiberoTarget = liberoTargets[longPressedPlayer.teamKey]?.[longPressedPlayer.currentPlayerNumber];
+                    const isLiberoSuppressed = liberoSuppressed[longPressedPlayer.teamKey]?.[longPressedPlayer.currentPlayerNumber];
+                    const shouldShowLibero = isLiberoTarget && isBackRow && !isLiberoSuppressed;
+
+                    if (!isLiberoTarget) {
+                      return (
+                        <button onClick={handleSetLiberoTarget} style={{
+                          display: "block",
+                          width: "100%",
+                          padding: "12px",
+                          marginBottom: "8px",
+                          backgroundColor: "#f59e0b",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          fontWeight: "600"
+                        }}>
+                          リベロ対象にする
+                        </button>
+                      );
+                    }
+
+                    if (shouldShowLibero) {
+                      return (
+                        <button onClick={handleRevertLibero} style={{
+                          display: "block",
+                          width: "100%",
+                          padding: "12px",
+                          marginBottom: "8px",
+                          backgroundColor: "#ef4444",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          fontWeight: "600"
+                        }}>
+                          リベロを戻す
+                        </button>
+                      );
+                    }
+
+                    if (isLiberoTarget) {
+                      return (
+                        <button onClick={handleRemoveLiberoTarget} style={{
+                          display: "block",
+                          width: "100%",
+                          padding: "12px",
+                          marginBottom: "8px",
+                          backgroundColor: "#8b5cf6",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          fontWeight: "600"
+                        }}>
+                          リベロ対象解除
+                        </button>
+                      );
+                    }
+                  })()}
+
                   <button onClick={() => setIsSubMenuOpen(false)} style={{
                     display: "block",
                     width: "100%",
