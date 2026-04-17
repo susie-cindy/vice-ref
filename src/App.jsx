@@ -220,9 +220,10 @@ function NumberPickerModal({ title, numbers, isNumberDisabled, onSelect, onCance
   );
 }
 
-function TeamSetupCard({ side, team, isServing, onSetServing, onPositionTap, onClearPositions }) {
+function TeamSetupCard({ teamKey, courtSide, team, isServing, onSetServing, onPositionTap, onClearPositions }) {
   const order = [1, 2, 3, 4, 5, 6];
-  const teamLabel = side === "A" ? "Aチーム（左側）" : "Bチーム（右側）";
+  const sideLabel = courtSide === "left" ? "左側" : "右側";
+  const teamLabel = `${teamKey}チーム（${sideLabel}）`;
 
   return (
     <div className="team-card">
@@ -315,9 +316,8 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
   );
 }
 
-function CourtHalf({ side, team, isReceiving, isServing, onPlayerTap, liberoTargets, liberoSuppressed }) {
+function CourtHalf({ side, teamKey, team, isReceiving, isServing, onPlayerTap, liberoTargets, liberoSuppressed }) {
   const coords = side === "left" ? LEFT_POSITIONS : RIGHT_POSITIONS;
-  const teamKey = side === "left" ? "A" : "B";
   
   // 選手一覧を作成：各選手が現在どのポジションにいるかを把握
   const players = Object.entries(team.positions).map(([pos, playerNumber]) => ({
@@ -337,7 +337,7 @@ function CourtHalf({ side, team, isReceiving, isServing, onPlayerTap, liberoTarg
 
         return (
           <PlayerMarker
-            key={`${side}-player-${playerNumber}`}
+            key={`${side}-player-${pos}-${playerNumber}`}
             x={point.x}
             y={point.y}
             scale={point.scale}
@@ -358,10 +358,11 @@ function CourtHalf({ side, team, isReceiving, isServing, onPlayerTap, liberoTarg
   );
 }
 
-function CourtView({ match, compact = false, onPlayerTap, liberoTargets, liberoSuppressed }) {
+function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTargets, liberoSuppressed }) {
+  const [leftTeamKey, rightTeamKey] = displayOrder;
   const receivingTeam = match.servingTeam === "A" ? "B" : "A";
-  const leftIsReceiving = receivingTeam === "A";
-  const rightIsReceiving = receivingTeam === "B";
+  const leftIsReceiving = receivingTeam === leftTeamKey;
+  const rightIsReceiving = receivingTeam === rightTeamKey;
   const baseFill = "#f2e3c6";
   const highlightFill = "#f7ead1";
   const leftStrokeWidth = leftIsReceiving ? 1.6 : 0.8;
@@ -382,12 +383,12 @@ function CourtView({ match, compact = false, onPlayerTap, liberoTargets, liberoS
 
           <div className="court-card__meta">
             <div>
-              左：{match.teams.A.name}
-              {receivingTeam === "A" && <span className="court-card__badge">レシーブ側</span>}
+              左：{match.teams[leftTeamKey].name}
+              {receivingTeam === leftTeamKey && <span className="court-card__badge">レシーブ側</span>}
             </div>
             <div>
-              右：{match.teams.B.name}
-              {receivingTeam === "B" && <span className="court-card__badge">レシーブ側</span>}
+              右：{match.teams[rightTeamKey].name}
+              {receivingTeam === rightTeamKey && <span className="court-card__badge">レシーブ側</span>}
             </div>
           </div>
         </>
@@ -415,18 +416,20 @@ function CourtView({ match, compact = false, onPlayerTap, liberoTargets, liberoS
 
           <CourtHalf
             side="left"
-            team={match.teams.A}
-            isServing={match.servingTeam === "A"}
-            isReceiving={receivingTeam === "A"}
+            teamKey={leftTeamKey}
+            team={match.teams[leftTeamKey]}
+            isServing={match.servingTeam === leftTeamKey}
+            isReceiving={receivingTeam === leftTeamKey}
             onPlayerTap={onPlayerTap}
             liberoTargets={liberoTargets}
             liberoSuppressed={liberoSuppressed}
           />
           <CourtHalf
             side="right"
-            team={match.teams.B}
-            isServing={match.servingTeam === "B"}
-            isReceiving={receivingTeam === "B"}
+            teamKey={rightTeamKey}
+            team={match.teams[rightTeamKey]}
+            isServing={match.servingTeam === rightTeamKey}
+            isReceiving={receivingTeam === rightTeamKey}
             onPlayerTap={onPlayerTap}
             liberoTargets={liberoTargets}
             liberoSuppressed={liberoSuppressed}
@@ -457,6 +460,7 @@ function CourtView({ match, compact = false, onPlayerTap, liberoTargets, liberoS
 export default function App() {
   const [mode, setMode] = useState("setup");
   const [match, setMatch] = useState(INITIAL_MATCH);
+  const [displayOrder, setDisplayOrder] = useState(["A", "B"]);
   const [history, setHistory] = useState([]);
   const [substitutions, setSubstitutions] = useState({ A: {}, B: {} });
   const [longPressedPlayer, setLongPressedPlayer] = useState(null);
@@ -476,6 +480,10 @@ export default function App() {
       ...prev,
       servingTeam: prev.servingTeam === teamKey ? (teamKey === "A" ? "B" : "A") : teamKey,
     }));
+  }
+
+  function swapDisplayOrder() {
+    setDisplayOrder((prev) => [prev[1], prev[0]]);
   }
 
   function openLineupNumberPicker(teamKey, pos) {
@@ -686,6 +694,7 @@ export default function App() {
 
   function handleReset() {
     setMatch(INITIAL_MATCH);
+    setDisplayOrder(["A", "B"]);
     setHistory([]);
     setSubstitutions({ A: {}, B: {} });
     setLiberoTargets({ A: {}, B: {} });
@@ -721,22 +730,23 @@ export default function App() {
       <div className="app-screen">
         {mode === "setup" ? (
           <div className="setup-screen">
-            <TeamSetupCard
-              side="A"
-              team={match.teams.A}
-              isServing={match.servingTeam === "A"}
-              onSetServing={() => toggleInitialServingTeam("A")}
-              onPositionTap={(pos) => openLineupNumberPicker("A", pos)}
-              onClearPositions={() => handleClearTeamPositions("A")}
-            />
-            <TeamSetupCard
-              side="B"
-              team={match.teams.B}
-              isServing={match.servingTeam === "B"}
-              onSetServing={() => toggleInitialServingTeam("B")}
-              onPositionTap={(pos) => openLineupNumberPicker("B", pos)}
-              onClearPositions={() => handleClearTeamPositions("B")}
-            />
+            <div className="setup-screen__actions">
+              <button type="button" className="setup-screen__swap" onClick={swapDisplayOrder}>
+                左右入れ替え
+              </button>
+            </div>
+            {displayOrder.map((teamKey, index) => (
+              <TeamSetupCard
+                key={teamKey}
+                teamKey={teamKey}
+                courtSide={index === 0 ? "left" : "right"}
+                team={match.teams[teamKey]}
+                isServing={match.servingTeam === teamKey}
+                onSetServing={() => toggleInitialServingTeam(teamKey)}
+                onPositionTap={(pos) => openLineupNumberPicker(teamKey, pos)}
+                onClearPositions={() => handleClearTeamPositions(teamKey)}
+              />
+            ))}
           </div>
         ) : (
           <div className="live-screen">
@@ -755,7 +765,7 @@ export default function App() {
               </button>
             </div>
             <div className="court-area">
-              <CourtView match={match} compact onPlayerTap={handlePlayerTap} liberoTargets={liberoTargets} liberoSuppressed={liberoSuppressed} />
+              <CourtView match={match} displayOrder={displayOrder} compact onPlayerTap={handlePlayerTap} liberoTargets={liberoTargets} liberoSuppressed={liberoSuppressed} />
             </div>
 
             {isSubMenuOpen && longPressedPlayer && (

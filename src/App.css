@@ -163,9 +163,37 @@ body {
   padding-right: 4px;
 }
 
+.setup-screen__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.setup-screen__swap {
+  min-height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 0 14px;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.06);
+}
+
+.setup-screen__swap:hover {
+  border-color: #94a3b8;
+}
+
 .app-shell--setup .setup-screen {
   gap: 6px;
   padding-right: 2px;
+}
+
+.app-shell--setup .setup-screen__swap {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 0.84rem;
 }
 
 .team-card {
