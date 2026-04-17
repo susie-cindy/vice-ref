@@ -484,6 +484,10 @@ export default function App() {
 
   function swapDisplayOrder() {
     setDisplayOrder((prev) => [prev[1], prev[0]]);
+    setMatch((prev) => ({
+      ...prev,
+      servingTeam: prev.servingTeam === "A" ? "B" : "A",
+    }));
   }
 
   function openLineupNumberPicker(teamKey, pos) {
