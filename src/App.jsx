@@ -334,10 +334,11 @@ function CourtHalf({ side, teamKey, team, isReceiving, isServing, onPlayerTap, l
         
         const shouldShowLibero = shouldShowLiberoForPlayer({ teamKey, playerNumber, pos, liberoTargets, liberoSuppressed });
         const displayLabel = shouldShowLibero ? "L" : playerNumber;
+        const markerKey = playerNumber ? `${teamKey}-player-${playerNumber}` : `${teamKey}-empty-${pos}`;
 
         return (
           <PlayerMarker
-            key={`${side}-player-${pos}-${playerNumber}`}
+            key={markerKey}
             x={point.x}
             y={point.y}
             scale={point.scale}
@@ -473,6 +474,15 @@ export default function App() {
 
   function syncLiberoSuppressions(teams) {
     setLiberoSuppressed((prev) => pruneFrontRowLiberoSuppressions(prev, teams));
+  }
+
+  function commitMatchOnNextFrame(nextMatch) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setMatch(nextMatch);
+        syncLiberoSuppressions(nextMatch.teams);
+      });
+    });
   }
 
   function toggleInitialServingTeam(teamKey) {
@@ -684,8 +694,7 @@ export default function App() {
         },
       },
     };
-    setMatch(nextMatch);
-    syncLiberoSuppressions(nextMatch.teams);
+    commitMatchOnNextFrame(nextMatch);
   }
 
   function handleUndo() {
