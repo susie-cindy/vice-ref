@@ -764,11 +764,15 @@ export default function App() {
           </div>
         ) : (
           <div className="live-screen">
+            <div className="court-area">
+              <CourtView match={match} displayOrder={displayOrder} compact onPlayerTap={handlePlayerTap} liberoTargets={liberoTargets} liberoSuppressed={liberoSuppressed} />
+            </div>
+
             <div className="action-grid action-grid--live">
               <button className="secondary" onClick={() => setMode("setup")}>
                 <span className="action-grid__text">サーブ順入力</span>
               </button>
-              <button className="primary" onClick={handleSideOut}>
+              <button className="primary action-grid__sideout" onClick={handleSideOut}>
                 <span className="action-grid__text">サイドアウト</span>
               </button>
               <button className="secondary" onClick={handleUndo}>
@@ -778,10 +782,6 @@ export default function App() {
                 <span className="action-grid__text">最初から</span>
               </button>
             </div>
-            <div className="court-area">
-              <CourtView match={match} displayOrder={displayOrder} compact onPlayerTap={handlePlayerTap} liberoTargets={liberoTargets} liberoSuppressed={liberoSuppressed} />
-            </div>
-
             {isSubMenuOpen && longPressedPlayer && (
               <div style={{
                 position: "fixed",
