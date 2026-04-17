@@ -372,6 +372,7 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
   const rightFillOpacity = rightIsReceiving ? 1 : 0.85;
   const courtStrokeColor = "#1f2937";
   const lineStrokeWidth = 1.6;
+  const courtViewBox = compact ? "-14 0 178 74" : "0 0 160 74";
 
   return (
     <div className={`court-card ${compact ? "court-card--compact" : ""}`}>
@@ -395,8 +396,8 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
         </>
       )}
 
-      <div className="court-svg-wrapper">
-        <svg viewBox="0 0 160 74" className="court-svg">
+      <div className={`court-svg-wrapper ${compact ? "court-svg-wrapper--compact" : ""}`}>
+        <svg viewBox={courtViewBox} className="court-svg">
           <polygon
             points="0,58 16,18 80,18 80,58"
             fill={leftIsReceiving ? highlightFill : baseFill}
