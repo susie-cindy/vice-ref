@@ -512,8 +512,8 @@ export default function App() {
   const [activeTimer, setActiveTimer] = useState(null);
   const wakeLockRef = useRef(null);
   const wakeLockRequestRef = useRef(null);
-  const [isWakeLockActive, setIsWakeLockActive] = useState(false);
-  const [wakeLockError, setWakeLockError] = useState(null);
+  const [, setIsWakeLockActive] = useState(false);
+  const [, setWakeLockError] = useState(null);
 
   const requestWakeLock = useCallback(async () => {
     if (typeof navigator === "undefined" || !("wakeLock" in navigator)) {
@@ -642,14 +642,6 @@ export default function App() {
       window.clearTimeout(timeoutId);
     };
   }, [activeTimer, requestWakeLock]);
-
-  const wakeLockStatusLabel = isWakeLockActive
-    ? "画面常時ON"
-    : wakeLockError === "unsupported"
-      ? "画面ON非対応"
-      : wakeLockError
-        ? "画面ON失敗"
-        : "画面ON準備中";
 
   function syncLiberoSuppressions(teams) {
     setLiberoSuppressed((prev) => pruneFrontRowLiberoSuppressions(prev, teams));
@@ -996,9 +988,6 @@ export default function App() {
           </div>
         ) : (
           <div className="live-screen">
-            <div className={`wake-lock-status ${isWakeLockActive ? "wake-lock-status--active" : "wake-lock-status--muted"}`}>
-              {wakeLockStatusLabel}
-            </div>
             <div className="court-area">
               <CourtView match={match} displayOrder={displayOrder} compact onPlayerTap={handlePlayerTap} liberoTargets={liberoTargets} liberoSuppressed={liberoSuppressed} />
             </div>

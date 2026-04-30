@@ -531,30 +531,6 @@ body {
   min-height: 0;
 }
 
-.wake-lock-status {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 5;
-  border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  line-height: 1.2;
-  pointer-events: none;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
-}
-
-.wake-lock-status--active {
-  background: rgba(16, 185, 129, 0.94);
-  color: #052e16;
-}
-
-.wake-lock-status--muted {
-  background: rgba(255, 255, 255, 0.88);
-  color: #475569;
-}
-
 .action-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
