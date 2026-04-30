@@ -36,7 +36,7 @@ const INITIAL_MATCH = {
   servingTeam: "A",
   teams: {
     A: {
-      name: "Aチーム",
+      name: "",
       positions: {
         1: "1",
         2: "2",
@@ -47,7 +47,7 @@ const INITIAL_MATCH = {
       },
     },
     B: {
-      name: "Bチーム",
+      name: "",
       positions: {
         1: "1",
         2: "2",
@@ -92,6 +92,11 @@ function vibrateTimerDone() {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate([300, 120, 300, 120, 500]);
   }
+}
+
+function getTeamDisplayName(teamKey, team) {
+  const name = team?.name?.trim();
+  return name || `${teamKey}チーム`;
 }
 
 function isFrontRowPosition(pos) {
@@ -235,16 +240,24 @@ function NumberPickerModal({ title, numbers, isNumberDisabled, onSelect, onCance
   );
 }
 
-function TeamSetupCard({ teamKey, courtSide, team, isServing, onSetServing, onPositionTap, onClearPositions }) {
+function TeamSetupCard({ teamKey, courtSide, team, isServing, onSetServing, onPositionTap, onClearPositions, onNameChange }) {
   const order = [1, 2, 3, 4, 5, 6];
   const sideLabel = courtSide === "left" ? "左側" : "右側";
-  const teamLabel = `${teamKey}チーム（${sideLabel}）`;
 
   return (
     <div className="team-card">
       <div className="team-card__header">
         <div className="team-card__identity">
-          <div className="team-card__label">{teamLabel}</div>
+          <label className="team-card__name-field">
+            <span className="team-card__side-label">{sideLabel}</span>
+            <input
+              className="team-card__name-input"
+              type="text"
+              value={team.name ?? ""}
+              placeholder={`${teamKey}チーム名`}
+              onChange={(event) => onNameChange(event.target.value)}
+            />
+          </label>
           <button type="button" className="team-card__clear" onClick={onClearPositions}>
             オールクリア
           </button>
@@ -376,6 +389,8 @@ function CourtHalf({ side, teamKey, team, isReceiving, isServing, onPlayerTap, l
 
 function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTargets, liberoSuppressed }) {
   const [leftTeamKey, rightTeamKey] = displayOrder;
+  const leftTeamName = getTeamDisplayName(leftTeamKey, match.teams[leftTeamKey]);
+  const rightTeamName = getTeamDisplayName(rightTeamKey, match.teams[rightTeamKey]);
   const receivingTeam = match.servingTeam === "A" ? "B" : "A";
   const leftIsReceiving = receivingTeam === leftTeamKey;
   const rightIsReceiving = receivingTeam === rightTeamKey;
@@ -400,15 +415,22 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
 
           <div className="court-card__meta">
             <div>
-              左：{match.teams[leftTeamKey].name}
+              左：{leftTeamName}
               {receivingTeam === leftTeamKey && <span className="court-card__badge">レシーブ側</span>}
             </div>
             <div>
-              右：{match.teams[rightTeamKey].name}
+              右：{rightTeamName}
               {receivingTeam === rightTeamKey && <span className="court-card__badge">レシーブ側</span>}
             </div>
           </div>
         </>
+      )}
+
+      {compact && (
+        <div className="court-team-names">
+          <div className="court-team-name court-team-name--left">{leftTeamName}</div>
+          <div className="court-team-name court-team-name--right">{rightTeamName}</div>
+        </div>
       )}
 
       <div className={`court-svg-wrapper ${compact ? "court-svg-wrapper--compact" : ""}`}>
@@ -654,6 +676,19 @@ export default function App() {
     setMatch((prev) => ({
       ...prev,
       servingTeam: prev.servingTeam === "A" ? "B" : "A",
+    }));
+  }
+
+  function updateTeamName(teamKey, name) {
+    setMatch((prev) => ({
+      ...prev,
+      teams: {
+        ...prev.teams,
+        [teamKey]: {
+          ...prev.teams[teamKey],
+          name,
+        },
+      },
     }));
   }
 
@@ -955,6 +990,7 @@ export default function App() {
                 onSetServing={() => toggleInitialServingTeam(teamKey)}
                 onPositionTap={(pos) => openLineupNumberPicker(teamKey, pos)}
                 onClearPositions={() => handleClearTeamPositions(teamKey)}
+                onNameChange={(name) => updateTeamName(teamKey, name)}
               />
             ))}
           </div>

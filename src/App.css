@@ -245,6 +245,41 @@ body {
   font-size: 0.92rem;
 }
 
+.team-card__name-field {
+  display: grid;
+  gap: 3px;
+  min-width: 150px;
+}
+
+.team-card__side-label {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.team-card__name-input {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #fff;
+  color: #0f172a;
+  padding: 6px 9px;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.team-card__name-input::placeholder {
+  color: #94a3b8;
+}
+
+.team-card__name-input:focus {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 2px;
+  border-color: #818cf8;
+}
+
 .team-card__clear {
   min-height: 38px;
   border: 1px solid #fecaca;
@@ -426,6 +461,35 @@ body {
   display: flex;
   align-items: stretch;
   justify-content: stretch;
+}
+
+.court-team-names {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.court-team-name {
+  min-width: 0;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.court-team-name--left {
+  text-align: left;
+}
+
+.court-team-name--right {
+  text-align: right;
 }
 
 .court-svg-wrapper--compact {
