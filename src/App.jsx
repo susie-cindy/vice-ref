@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import "./App.css";
 
@@ -9,6 +9,9 @@ const DIM_OPACITY = 0.35;
 const FRONT_ROW_POSITIONS = [2, 3, 4];
 const SERVER_POSITION = 1;
 const PLAYER_NUMBER_OPTIONS = Array.from({ length: 14 }, (_, i) => i + 1);
+const TIMEOUT_TIMER_SECONDS = 30;
+const SET_BREAK_TIMER_SECONDS = 150;
+const TIMER_DONE_HOLD_MS = 5000;
 const MotionGroup = motion.g;
 
 const LEFT_POSITIONS = {
@@ -77,6 +80,18 @@ function createEmptyPositions() {
     5: "",
     6: "",
   };
+}
+
+function formatTimerSeconds(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes}:${seconds.toString().padStart(2, "0")}` : `${seconds}`;
+}
+
+function vibrateTimerDone() {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate([300, 120, 300, 120, 500]);
+  }
 }
 
 function isFrontRowPosition(pos) {
@@ -472,6 +487,147 @@ export default function App() {
   const [lineupNumberPickerTarget, setLineupNumberPickerTarget] = useState(null);
   const [liberoTargets, setLiberoTargets] = useState({ A: {}, B: {} });
   const [liberoSuppressed, setLiberoSuppressed] = useState({ A: {}, B: {} });
+  const [activeTimer, setActiveTimer] = useState(null);
+  const wakeLockRef = useRef(null);
+  const wakeLockRequestRef = useRef(null);
+  const [isWakeLockActive, setIsWakeLockActive] = useState(false);
+  const [wakeLockError, setWakeLockError] = useState(null);
+
+  const requestWakeLock = useCallback(async () => {
+    if (typeof navigator === "undefined" || !("wakeLock" in navigator)) {
+      setWakeLockError("unsupported");
+      setIsWakeLockActive(false);
+      return;
+    }
+
+    if (wakeLockRef.current) {
+      setWakeLockError(null);
+      setIsWakeLockActive(true);
+      return;
+    }
+
+    if (wakeLockRequestRef.current) {
+      try {
+        await wakeLockRequestRef.current;
+      } catch {
+        // The original request handles the failure and updates UI state.
+      }
+      return;
+    }
+
+    try {
+      wakeLockRequestRef.current = navigator.wakeLock.request("screen");
+      const wakeLock = await wakeLockRequestRef.current;
+      wakeLockRef.current = wakeLock;
+      setWakeLockError(null);
+      setIsWakeLockActive(true);
+
+      wakeLock.addEventListener("release", () => {
+        if (wakeLockRef.current === wakeLock) {
+          wakeLockRef.current = null;
+        }
+        setIsWakeLockActive(false);
+      });
+    } catch (error) {
+      console.warn("Screen Wake Lock request failed.", error);
+      wakeLockRef.current = null;
+      setWakeLockError(error);
+      setIsWakeLockActive(false);
+    } finally {
+      wakeLockRequestRef.current = null;
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    const wakeLock = wakeLockRef.current;
+    if (!wakeLock) return;
+
+    wakeLockRef.current = null;
+    try {
+      await wakeLock.release();
+    } catch (error) {
+      console.warn("Screen Wake Lock release failed.", error);
+    } finally {
+      setIsWakeLockActive(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      if (mode === "live") {
+        requestWakeLock();
+      } else {
+        releaseWakeLock();
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [mode, releaseWakeLock, requestWakeLock]);
+
+  useEffect(() => {
+    return () => {
+      releaseWakeLock();
+    };
+  }, [releaseWakeLock]);
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible" && mode === "live") {
+        requestWakeLock();
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [mode, requestWakeLock]);
+
+  useEffect(() => {
+    if (!activeTimer || activeTimer.phase !== "running") return undefined;
+
+    const intervalId = window.setInterval(() => {
+      setActiveTimer((prev) => {
+        if (!prev || prev.id !== activeTimer.id || prev.phase !== "running") return prev;
+        const remainingSeconds = Math.max(0, Math.ceil((prev.endsAt - Date.now()) / 1000));
+        if (remainingSeconds === 0) {
+          return { ...prev, seconds: 0, phase: "done" };
+        }
+        return { ...prev, seconds: remainingSeconds };
+      });
+    }, 250);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [activeTimer]);
+
+  useEffect(() => {
+    if (!activeTimer || activeTimer.phase !== "done") return undefined;
+
+    vibrateTimerDone();
+    const timeoutId = window.setTimeout(() => {
+      if (activeTimer.type === "setBreak") {
+        setMode("live");
+        requestWakeLock();
+      }
+      setActiveTimer((prev) => (prev?.id === activeTimer.id ? null : prev));
+    }, TIMER_DONE_HOLD_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [activeTimer, requestWakeLock]);
+
+  const wakeLockStatusLabel = isWakeLockActive
+    ? "画面常時ON"
+    : wakeLockError === "unsupported"
+      ? "画面ON非対応"
+      : wakeLockError
+        ? "画面ON失敗"
+        : "画面ON準備中";
 
   function syncLiberoSuppressions(teams) {
     setLiberoSuppressed((prev) => pruneFrontRowLiberoSuppressions(prev, teams));
@@ -499,6 +655,52 @@ export default function App() {
       ...prev,
       servingTeam: prev.servingTeam === "A" ? "B" : "A",
     }));
+  }
+
+  function startTimeoutTimer() {
+    requestWakeLock();
+    setActiveTimer({
+      id: Date.now(),
+      type: "timeout",
+      seconds: TIMEOUT_TIMER_SECONDS,
+      endsAt: Date.now() + TIMEOUT_TIMER_SECONDS * 1000,
+      phase: "running",
+      previousMode: mode,
+      restoreState: null,
+    });
+  }
+
+  function startSetBreakTimer() {
+    setActiveTimer({
+      id: Date.now(),
+      type: "setBreak",
+      seconds: SET_BREAK_TIMER_SECONDS,
+      endsAt: Date.now() + SET_BREAK_TIMER_SECONDS * 1000,
+      phase: "running",
+      previousMode: mode,
+      restoreState: {
+        displayOrder,
+        servingTeam: match.servingTeam,
+      },
+    });
+    swapDisplayOrder();
+    setMode("setup");
+  }
+
+  function cancelActiveTimer() {
+    if (activeTimer?.type === "setBreak" && activeTimer.restoreState) {
+      setDisplayOrder(activeTimer.restoreState.displayOrder);
+      setMatch((prev) => ({
+        ...prev,
+        servingTeam: activeTimer.restoreState.servingTeam,
+      }));
+    }
+
+    if (activeTimer?.previousMode) {
+      setMode(activeTimer.previousMode);
+    }
+
+    setActiveTimer(null);
   }
 
   function openLineupNumberPicker(teamKey, pos) {
@@ -682,6 +884,7 @@ export default function App() {
   }
 
   function handleSideOut() {
+    requestWakeLock();
     setHistory((prev) => [...prev, match]);
     const nextServingTeam = match.servingTeam === "A" ? "B" : "A";
     const nextMatch = {
@@ -706,16 +909,6 @@ export default function App() {
     setHistory((prev) => prev.slice(0, -1));
   }
 
-  function handleReset() {
-    setMatch(INITIAL_MATCH);
-    setDisplayOrder(["A", "B"]);
-    setHistory([]);
-    setSubstitutions({ A: {}, B: {} });
-    setLiberoTargets({ A: {}, B: {} });
-    setLiberoSuppressed({ A: {}, B: {} });
-    setMode("setup");
-  }
-
   return (
     <div className={`app-shell app-shell--${mode}`} style={{ backgroundColor: APP_BACKGROUND }}>
       <div className={`app-header ${mode === "live" ? "app-header--hidden" : ""}`}>
@@ -734,7 +927,10 @@ export default function App() {
           </button>
           <button
             className={`app-mode-button ${mode === "live" ? "app-mode-button--active" : ""}`}
-            onClick={() => setMode("live")}
+            onClick={() => {
+              setMode("live");
+              requestWakeLock();
+            }}
           >
             試合中表示
           </button>
@@ -764,6 +960,9 @@ export default function App() {
           </div>
         ) : (
           <div className="live-screen">
+            <div className={`wake-lock-status ${isWakeLockActive ? "wake-lock-status--active" : "wake-lock-status--muted"}`}>
+              {wakeLockStatusLabel}
+            </div>
             <div className="court-area">
               <CourtView match={match} displayOrder={displayOrder} compact onPlayerTap={handlePlayerTap} liberoTargets={liberoTargets} liberoSuppressed={liberoSuppressed} />
             </div>
@@ -778,8 +977,11 @@ export default function App() {
               <button className="secondary" onClick={handleUndo}>
                 <span className="action-grid__text">1つ戻す</span>
               </button>
-              <button className="secondary" onClick={handleReset}>
-                <span className="action-grid__text">最初から</span>
+              <button className="secondary" onClick={startSetBreakTimer}>
+                <span className="action-grid__text">セット間</span>
+              </button>
+              <button className="secondary" onClick={startTimeoutTimer}>
+                <span className="action-grid__text">TO</span>
               </button>
             </div>
             {isSubMenuOpen && longPressedPlayer && (
@@ -952,6 +1154,24 @@ export default function App() {
           />
         )}
       </div>
+      {activeTimer?.type === "setBreak" && (
+        <div className={`floating-timer ${activeTimer.phase === "done" ? "floating-timer--done" : ""}`}>
+          <div className="floating-timer__label">セット間</div>
+          <div className="floating-timer__time">{formatTimerSeconds(activeTimer.seconds)}</div>
+          <button type="button" className="timer-cancel-button" onClick={cancelActiveTimer}>
+            取消
+          </button>
+        </div>
+      )}
+      {activeTimer?.type === "timeout" && (
+        <div className={`timeout-timer-overlay ${activeTimer.phase === "done" ? "timeout-timer-overlay--done" : ""}`}>
+          <div className="timeout-timer-overlay__label">タイムアウト</div>
+          <div className="timeout-timer-overlay__time">{formatTimerSeconds(activeTimer.seconds)}</div>
+          <button type="button" className="timeout-timer-overlay__cancel" onClick={cancelActiveTimer}>
+            取消
+          </button>
+        </div>
+      )}
     </div>
   );
 }
