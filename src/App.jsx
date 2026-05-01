@@ -60,6 +60,22 @@ const INITIAL_MATCH = {
   },
 };
 
+function cloneMatchState(matchState) {
+  return {
+    ...matchState,
+    teams: {
+      A: {
+        ...matchState.teams.A,
+        positions: { ...matchState.teams.A.positions },
+      },
+      B: {
+        ...matchState.teams.B,
+        positions: { ...matchState.teams.B.positions },
+      },
+    },
+  };
+}
+
 function rotateClockwise(positions) {
   return {
     1: positions[2],
@@ -535,7 +551,9 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
 
 export default function App() {
   const [mode, setMode] = useState("setup");
-  const [match, setMatch] = useState(INITIAL_MATCH);
+  const [setupMatch, setSetupMatch] = useState(() => cloneMatchState(INITIAL_MATCH));
+  const [match, setMatch] = useState(() => cloneMatchState(INITIAL_MATCH));
+  const [hasLiveStarted, setHasLiveStarted] = useState(false);
   const [displayOrder, setDisplayOrder] = useState(["A", "B"]);
   const [history, setHistory] = useState([]);
   const [substitutions, setSubstitutions] = useState({ A: {}, B: {} });
@@ -611,6 +629,23 @@ export default function App() {
     }
   }, []);
 
+  const applySetupMatchToLive = useCallback(() => {
+    const nextMatch = cloneMatchState(setupMatch);
+    setMatch(nextMatch);
+    setHistory([]);
+    setSubstitutions({ A: {}, B: {} });
+    setLiberoSuppressed(pruneFrontRowLiberoSuppressions({ A: {}, B: {} }, nextMatch.teams));
+    setHasLiveStarted(true);
+  }, [setupMatch]);
+
+  function enterLiveMode() {
+    if (!hasLiveStarted) {
+      applySetupMatchToLive();
+    }
+    setMode("live");
+    requestWakeLock();
+  }
+
   useEffect(() => {
     const timerId = window.setTimeout(() => {
       if (mode === "live") {
@@ -669,6 +704,7 @@ export default function App() {
     vibrateTimerDone();
     const timeoutId = window.setTimeout(() => {
       if (activeTimer.type === "setBreak") {
+        applySetupMatchToLive();
         setMode("live");
         requestWakeLock();
       }
@@ -678,7 +714,7 @@ export default function App() {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [activeTimer, requestWakeLock]);
+  }, [activeTimer, applySetupMatchToLive, requestWakeLock]);
 
   function syncLiberoSuppressions(teams) {
     setLiberoSuppressed((prev) => pruneFrontRowLiberoSuppressions(prev, teams));
@@ -694,7 +730,7 @@ export default function App() {
   }
 
   function toggleInitialServingTeam(teamKey) {
-    setMatch((prev) => ({
+    setSetupMatch((prev) => ({
       ...prev,
       servingTeam: prev.servingTeam === teamKey ? (teamKey === "A" ? "B" : "A") : teamKey,
     }));
@@ -702,14 +738,14 @@ export default function App() {
 
   function swapDisplayOrder() {
     setDisplayOrder((prev) => [prev[1], prev[0]]);
-    setMatch((prev) => ({
+    setSetupMatch((prev) => ({
       ...prev,
       servingTeam: prev.servingTeam === "A" ? "B" : "A",
     }));
   }
 
   function updateTeamName(teamKey, name) {
-    setMatch((prev) => ({
+    setSetupMatch((prev) => ({
       ...prev,
       teams: {
         ...prev.teams,
@@ -745,6 +781,7 @@ export default function App() {
       restoreState: {
         displayOrder,
         servingTeam: match.servingTeam,
+        setupServingTeam: setupMatch.servingTeam,
       },
     });
     swapDisplayOrder();
@@ -754,6 +791,10 @@ export default function App() {
   function cancelActiveTimer() {
     if (activeTimer?.type === "setBreak" && activeTimer.restoreState) {
       setDisplayOrder(activeTimer.restoreState.displayOrder);
+      setSetupMatch((prev) => ({
+        ...prev,
+        servingTeam: activeTimer.restoreState.setupServingTeam,
+      }));
       setMatch((prev) => ({
         ...prev,
         servingTeam: activeTimer.restoreState.servingTeam,
@@ -775,20 +816,19 @@ export default function App() {
     if (!lineupNumberPickerTarget) return;
     const { teamKey, pos } = lineupNumberPickerTarget;
     const nextMatch = {
-      ...match,
+      ...setupMatch,
       teams: {
-        ...match.teams,
+        ...setupMatch.teams,
         [teamKey]: {
-          ...match.teams[teamKey],
+          ...setupMatch.teams[teamKey],
           positions: {
-            ...match.teams[teamKey].positions,
+            ...setupMatch.teams[teamKey].positions,
             [pos]: playerNumber,
           },
         },
       },
     };
-    setMatch(nextMatch);
-    syncLiberoSuppressions(nextMatch.teams);
+    setSetupMatch(nextMatch);
     setLineupNumberPickerTarget(null);
   }
 
@@ -799,17 +839,16 @@ export default function App() {
 
   function handleClearTeamPositions(teamKey) {
     const nextMatch = {
-      ...match,
+      ...setupMatch,
       teams: {
-        ...match.teams,
+        ...setupMatch.teams,
         [teamKey]: {
-          ...match.teams[teamKey],
+          ...setupMatch.teams[teamKey],
           positions: createEmptyPositions(),
         },
       },
     };
-    setMatch(nextMatch);
-    syncLiberoSuppressions(nextMatch.teams);
+    setSetupMatch(nextMatch);
   }
 
   function handlePlayerTap(teamKey, pos, currentPlayerNumber) {
@@ -991,10 +1030,7 @@ export default function App() {
           </button>
           <button
             className={`app-mode-button ${mode === "live" ? "app-mode-button--active" : ""}`}
-            onClick={() => {
-              setMode("live");
-              requestWakeLock();
-            }}
+            onClick={enterLiveMode}
           >
             試合中表示
           </button>
@@ -1014,8 +1050,8 @@ export default function App() {
                 key={teamKey}
                 teamKey={teamKey}
                 courtSide={index === 0 ? "left" : "right"}
-                team={match.teams[teamKey]}
-                isServing={match.servingTeam === teamKey}
+                team={setupMatch.teams[teamKey]}
+                isServing={setupMatch.servingTeam === teamKey}
                 onSetServing={() => toggleInitialServingTeam(teamKey)}
                 onPositionTap={(pos) => openLineupNumberPicker(teamKey, pos)}
                 onClearPositions={() => handleClearTeamPositions(teamKey)}
@@ -1206,7 +1242,7 @@ export default function App() {
             title={`P${lineupNumberPickerTarget.pos} の背番号を選択`}
             numbers={PLAYER_NUMBER_OPTIONS}
             isNumberDisabled={(numberText) =>
-              Object.entries(match.teams[lineupNumberPickerTarget.teamKey].positions).some(
+              Object.entries(setupMatch.teams[lineupNumberPickerTarget.teamKey].positions).some(
                 ([pos, currentPlayerNumber]) => Number(pos) !== Number(lineupNumberPickerTarget.pos) && currentPlayerNumber === numberText
               )
             }
