@@ -408,14 +408,19 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
   const leftIsReceiving = receivingTeam === leftTeamKey;
   const rightIsReceiving = receivingTeam === rightTeamKey;
   const baseFill = "#f2e3c6";
-  const highlightFill = "#f7ead1";
-  const leftStrokeWidth = leftIsReceiving ? 1.6 : 0.8;
-  const rightStrokeWidth = rightIsReceiving ? 1.6 : 0.8;
-  const leftFillOpacity = leftIsReceiving ? 1 : 0.85;
-  const rightFillOpacity = rightIsReceiving ? 1 : 0.85;
+  const highlightFill = "#fff3c4";
+  const receivingAccentColor = "#22c55e";
+  const leftStrokeWidth = leftIsReceiving ? 2.8 : 0.9;
+  const rightStrokeWidth = rightIsReceiving ? 2.8 : 0.9;
+  const leftFillOpacity = leftIsReceiving ? 1 : 0.78;
+  const rightFillOpacity = rightIsReceiving ? 1 : 0.78;
   const courtStrokeColor = "#1f2937";
   const lineStrokeWidth = 1.6;
   const courtViewBox = compact ? "-14 0 178 74" : "0 0 160 74";
+  const leftCourtPoints = "0,58 16,18 80,18 80,58";
+  const rightCourtPoints = "80,18 144,18 160,58 80,58";
+  const leftReceivingHaloPoints = "-2,61 14,15 82,15 82,61";
+  const rightReceivingHaloPoints = "78,15 146,15 162,61 78,61";
 
   return (
     <div className={`court-card ${compact ? "court-card--compact" : ""}`}>
@@ -448,21 +453,50 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
 
       <div className={`court-svg-wrapper ${compact ? "court-svg-wrapper--compact" : ""}`}>
         <svg viewBox={courtViewBox} className="court-svg">
+          <defs>
+            <filter id="receiving-court-glow" x="-20%" y="-40%" width="140%" height="180%">
+              <feDropShadow dx="0" dy="0" stdDeviation="2.4" floodColor={receivingAccentColor} floodOpacity="0.48" />
+            </filter>
+          </defs>
+          {leftIsReceiving && (
+            <polygon
+              points={leftReceivingHaloPoints}
+              fill="none"
+              stroke={receivingAccentColor}
+              strokeWidth="3.2"
+              strokeLinejoin="round"
+              opacity="0.9"
+              filter="url(#receiving-court-glow)"
+            />
+          )}
+          {rightIsReceiving && (
+            <polygon
+              points={rightReceivingHaloPoints}
+              fill="none"
+              stroke={receivingAccentColor}
+              strokeWidth="3.2"
+              strokeLinejoin="round"
+              opacity="0.9"
+              filter="url(#receiving-court-glow)"
+            />
+          )}
           <polygon
-            points="0,58 16,18 80,18 80,58"
+            points={leftCourtPoints}
             fill={leftIsReceiving ? highlightFill : baseFill}
             fillOpacity={leftFillOpacity}
-            stroke={courtStrokeColor}
+            stroke={leftIsReceiving ? receivingAccentColor : courtStrokeColor}
             strokeWidth={leftStrokeWidth}
             strokeLinecap="butt"
+            strokeLinejoin="round"
           />
           <polygon
-            points="80,18 144,18 160,58 80,58"
+            points={rightCourtPoints}
             fill={rightIsReceiving ? highlightFill : baseFill}
             fillOpacity={rightFillOpacity}
-            stroke={courtStrokeColor}
+            stroke={rightIsReceiving ? receivingAccentColor : courtStrokeColor}
             strokeWidth={rightStrokeWidth}
             strokeLinecap="butt"
+            strokeLinejoin="round"
           />
           <line x1="80" y1="12" x2="80" y2="66" stroke={courtStrokeColor} strokeWidth={lineStrokeWidth} strokeLinecap="butt" />
 
