@@ -313,6 +313,11 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
   const badgeHeight = 6 * scale;
   const badgeTransform = `translate(${11 * scale},-${8 * scale})`;
   const badgeTextSize = 3.8 * scale;
+  const shadowBaseRadius = isServer ? radius * 1.08 : radius;
+  const shadowCy = radius * 0.82;
+  const shadowRx = shadowBaseRadius * 0.92;
+  const shadowRy = shadowBaseRadius * 0.28;
+  const shadowOpacity = isServer ? 0.18 : 0.16;
 
   const outwardShift = isServer ? (isLeft ? -10 : isRight ? 15 : 0) : 0;
 
@@ -324,6 +329,15 @@ function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimm
       style={{ opacity: isDimmed ? DIM_OPACITY : 1, transformOrigin: "center center", cursor: "pointer" }}
       onClick={() => onPlayerTap?.(teamKey, pos, number)}
     >
+      <ellipse
+        cx="0"
+        cy={shadowCy}
+        rx={shadowRx}
+        ry={shadowRy}
+        fill="#0f172a"
+        opacity={shadowOpacity}
+        filter="url(#player-court-shadow-blur)"
+      />
       {isServer && (
         <circle cx="0" cy="0" r={13 * scale} fill="none" stroke="#facc15" strokeWidth={2.5 * scale} opacity="0.95" />
       )}
@@ -451,6 +465,11 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
 
       <div className={`court-svg-wrapper ${compact ? "court-svg-wrapper--compact" : ""}`}>
         <svg viewBox={courtViewBox} className="court-svg">
+          <defs>
+            <filter id="player-court-shadow-blur" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="0.45" />
+            </filter>
+          </defs>
           <polygon
             points={leftCourtPoints}
             fill={leftIsReceiving ? highlightFill : baseFill}
