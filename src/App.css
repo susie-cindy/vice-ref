@@ -197,62 +197,60 @@ body {
 }
 
 .team-card {
-  background: #fff;
-  border-radius: 24px;
-  padding: 16px;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  background: #fffefb;
+  border: 2px solid #334155;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 
 .app-shell--setup .team-card {
-  border-radius: 16px;
-  padding: 9px;
-  gap: 8px;
-  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+  border-radius: 9px;
+  padding: 8px;
+  gap: 6px;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.05);
 }
 
 .team-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .app-shell--setup .team-card__header {
   gap: 8px;
 }
 
-.team-card__identity {
+.team-card__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
-.app-shell--setup .team-card__identity {
-  gap: 6px;
-}
-
-.team-card__label {
-  font-size: 1rem;
+.team-card__name-label {
+  color: #334155;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #0f172a;
-}
-
-.app-shell--setup .team-card__label {
-  font-size: 0.92rem;
+  line-height: 1;
 }
 
 .team-card__name-field {
   display: grid;
-  gap: 3px;
-  min-width: 150px;
+  grid-template-columns: auto minmax(120px, 1fr);
+  align-items: end;
+  gap: 6px;
+  min-width: min(220px, 55%);
+  flex: 1;
 }
 
 .team-card__side-label {
-  color: #64748b;
+  color: #475569;
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1;
@@ -260,13 +258,14 @@ body {
 
 .team-card__name-input {
   width: 100%;
-  min-height: 34px;
-  border: 1px solid #cbd5e1;
-  border-radius: 9px;
-  background: #fff;
+  min-height: 30px;
+  border: none;
+  border-bottom: 2px solid #334155;
+  border-radius: 0;
+  background: transparent;
   color: #0f172a;
-  padding: 6px 9px;
-  font-size: 0.92rem;
+  padding: 4px 6px 3px;
+  font-size: 1rem;
   font-weight: 800;
 }
 
@@ -276,26 +275,26 @@ body {
 
 .team-card__name-input:focus {
   outline: 2px solid #a5b4fc;
-  outline-offset: 2px;
-  border-color: #818cf8;
+  outline-offset: 1px;
+  border-bottom-color: #475569;
 }
 
 .team-card__clear {
-  min-height: 38px;
+  min-height: 30px;
   border: 1px solid #fecaca;
-  border-radius: 8px;
-  padding: 0 12px;
+  border-radius: 7px;
+  padding: 0 9px;
   background: #fff7f7;
   color: #b91c1c;
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   font-weight: 700;
 }
 
 .app-shell--setup .team-card__clear {
-  min-height: 34px;
-  padding: 0 9px;
-  font-size: 0.78rem;
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 0.72rem;
 }
 
 .team-card__clear:hover {
@@ -303,11 +302,11 @@ body {
 }
 
 .team-card__set-serving {
-  min-height: 50px;
+  min-height: 30px;
   border: none;
-  border-radius: 18px;
-  padding: 0 16px;
-  font-size: 0.95rem;
+  border-radius: 7px;
+  padding: 0 10px;
+  font-size: 0.76rem;
   font-weight: 700;
   cursor: pointer;
   background: #e2e8f0;
@@ -315,10 +314,10 @@ body {
 }
 
 .app-shell--setup .team-card__set-serving {
-  min-height: 38px;
-  border-radius: 12px;
-  padding: 0 12px;
-  font-size: 0.86rem;
+  min-height: 28px;
+  border-radius: 7px;
+  padding: 0 8px;
+  font-size: 0.72rem;
 }
 
 .team-card__set-serving--active {
@@ -326,60 +325,100 @@ body {
   color: #fff;
 }
 
+.team-card__set-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  color: #334155;
+  font-weight: 800;
+}
+
+.team-card__set-label {
+  grid-column: 2;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  padding: 2px 16px;
+  background: #f8fafc;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .team-card__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border: 2px solid #334155;
+  background: #334155;
 }
 
 .app-shell--setup .team-card__grid {
-  gap: 6px;
+  gap: 0;
 }
 
 .team-card__field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border-radius: 18px;
-  background: #f8fafc;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 4px;
+  min-height: clamp(84px, 17vh, 132px);
+  padding: 8px;
+  border-radius: 0;
+  background: #fffefb;
 }
 
 .app-shell--setup .team-card__field {
   gap: 3px;
-  padding: 7px;
-  border-radius: 12px;
+  padding: 6px;
+  border-radius: 0;
 }
 
 .team-card__field-label {
-  font-size: 0.82rem;
-  color: #475569;
+  width: 100%;
+  border-bottom: 1px solid #94a3b8;
+  padding-bottom: 3px;
+  color: #0f172a;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
 }
 
 .app-shell--setup .team-card__field-label {
-  font-size: 0.74rem;
-  line-height: 1.15;
+  font-size: 0.84rem;
+  line-height: 1;
 }
 
 .team-card__input {
-  width: 100%;
-  min-height: 52px;
-  border-radius: 16px;
-  border: 1px solid #cbd5e1;
+  align-self: center;
+  justify-self: center;
+  width: clamp(48px, 12vw, 72px);
+  aspect-ratio: 1;
+  min-height: 0;
+  border-radius: 50%;
+  border: 2px solid #334155;
   background: #fff;
-  padding: 12px 14px;
-  font-size: 1rem;
-  font-weight: 700;
+  padding: 0;
+  font-size: clamp(1.35rem, 3vw, 2.1rem);
+  font-weight: 900;
   color: #0f172a;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
+  line-height: 1;
 }
 
 .app-shell--setup .team-card__input {
-  min-height: 40px;
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-size: 0.95rem;
+  min-height: 0;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.team-card__input:not(.team-card__input--filled)::after {
+  content: "";
+  display: block;
+  width: 22%;
+  height: 2px;
+  margin: 0 auto;
+  background: #cbd5e1;
 }
 
 .team-card__input:focus {
@@ -703,7 +742,7 @@ body {
   }
 
   .team-card__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .app-shell--setup .app-header {
@@ -726,7 +765,7 @@ body {
   }
 
   .app-shell--setup .team-card__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .action-grid {
@@ -740,5 +779,26 @@ body {
   .action-grid--live button {
     padding: 0 4px;
     font-size: 0.74rem;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .app-shell--setup .setup-screen {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    align-items: start;
+  }
+
+  .app-shell--setup .setup-screen__actions {
+    grid-column: 1 / -1;
+  }
+
+  .app-shell--setup .team-card__field {
+    min-height: 74px;
+  }
+
+  .app-shell--setup .team-card__input {
+    width: clamp(42px, 8vw, 58px);
+    font-size: 1.45rem;
   }
 }

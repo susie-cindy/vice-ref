@@ -241,45 +241,59 @@ function NumberPickerModal({ title, numbers, isNumberDisabled, onSelect, onCance
 }
 
 function TeamSetupCard({ teamKey, courtSide, team, isServing, onSetServing, onPositionTap, onClearPositions, onNameChange }) {
-  const order = [1, 2, 3, 4, 5, 6];
+  const order = [
+    { label: "IV", pos: 4 },
+    { label: "III", pos: 3 },
+    { label: "II", pos: 2 },
+    { label: "V", pos: 5 },
+    { label: "VI", pos: 6 },
+    { label: "I", pos: 1 },
+  ];
   const sideLabel = courtSide === "left" ? "左側" : "右側";
 
   return (
     <div className="team-card">
       <div className="team-card__header">
-        <div className="team-card__identity">
-          <label className="team-card__name-field">
-            <span className="team-card__side-label">{sideLabel}</span>
-            <input
-              className="team-card__name-input"
-              type="text"
-              value={team.name ?? ""}
-              placeholder={`${teamKey}チーム名`}
-              onChange={(event) => onNameChange(event.target.value)}
-            />
-          </label>
+        <label className="team-card__name-field">
+          <span className="team-card__name-label">チーム名</span>
+          <input
+            className="team-card__name-input"
+            type="text"
+            value={team.name ?? ""}
+            placeholder={`${teamKey}チーム`}
+            onChange={(event) => onNameChange(event.target.value)}
+          />
+        </label>
+        <div className="team-card__actions" aria-label={`${sideLabel}の入力操作`}>
           <button type="button" className="team-card__clear" onClick={onClearPositions}>
             オールクリア
           </button>
+          <button
+            type="button"
+            className={`team-card__set-serving ${isServing ? "team-card__set-serving--active" : ""}`}
+            onClick={onSetServing}
+          >
+            {isServing ? "サーブ権" : "レセプション"}
+          </button>
         </div>
-        <button
-          className={`team-card__set-serving ${isServing ? "team-card__set-serving--active" : ""}`}
-          onClick={onSetServing}
-        >
-          {isServing ? "サーブ権" : "レセプション"}
-        </button>
+      </div>
+
+      <div className="team-card__set-row">
+        <span className="team-card__side-label">{sideLabel}</span>
+        <span className="team-card__set-label">1 セット</span>
       </div>
 
       <div className="team-card__grid">
-        {order.map((pos) => (
+        {order.map(({ label, pos }) => (
           <div key={pos} className="team-card__field">
-            <div className="team-card__field-label">位置 P{pos}</div>
+            <div className="team-card__field-label">{label}</div>
             <button
               type="button"
-              className="team-card__input"
+              className={`team-card__input ${team.positions[pos] ? "team-card__input--filled" : ""}`}
+              aria-label={`${label}の背番号`}
               onClick={() => onPositionTap(pos)}
             >
-              {team.positions[pos] || "背番号を選択"}
+              {team.positions[pos] || ""}
             </button>
           </div>
         ))}
@@ -287,7 +301,6 @@ function TeamSetupCard({ teamKey, courtSide, team, isServing, onSetServing, onPo
     </div>
   );
 }
-
 function PlayerMarker({ x, y, number, pos, scale: positionScale, isFront, isDimmed, isServer, isRight, isLeft, teamKey, onPlayerTap, displayLabel }) {
   const baseScale = positionScale;
   const scale = isServer && isRight ? baseScale * 0.8 : baseScale;
