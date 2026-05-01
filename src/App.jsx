@@ -419,8 +419,6 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
   const courtViewBox = compact ? "-14 0 178 74" : "0 0 160 74";
   const leftCourtPoints = "0,58 16,18 80,18 80,58";
   const rightCourtPoints = "80,18 144,18 160,58 80,58";
-  const leftReceivingHaloPoints = "-2,61 14,15 82,15 82,61";
-  const rightReceivingHaloPoints = "78,15 146,15 162,61 78,61";
 
   return (
     <div className={`court-card ${compact ? "court-card--compact" : ""}`}>
@@ -453,26 +451,6 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
 
       <div className={`court-svg-wrapper ${compact ? "court-svg-wrapper--compact" : ""}`}>
         <svg viewBox={courtViewBox} className="court-svg">
-          {leftIsReceiving && (
-            <polygon
-              points={leftReceivingHaloPoints}
-              fill="none"
-              stroke={receivingAccentColor}
-              strokeWidth="2"
-              strokeLinejoin="round"
-              opacity="0.78"
-            />
-          )}
-          {rightIsReceiving && (
-            <polygon
-              points={rightReceivingHaloPoints}
-              fill="none"
-              stroke={receivingAccentColor}
-              strokeWidth="2"
-              strokeLinejoin="round"
-              opacity="0.78"
-            />
-          )}
           <polygon
             points={leftCourtPoints}
             fill={leftIsReceiving ? highlightFill : baseFill}
