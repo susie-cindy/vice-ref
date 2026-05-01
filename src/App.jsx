@@ -453,11 +453,6 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
 
       <div className={`court-svg-wrapper ${compact ? "court-svg-wrapper--compact" : ""}`}>
         <svg viewBox={courtViewBox} className="court-svg">
-          <defs>
-            <filter id="receiving-court-glow" x="-20%" y="-40%" width="140%" height="180%">
-              <feDropShadow dx="0" dy="0" stdDeviation="1.2" floodColor={receivingAccentColor} floodOpacity="0.28" />
-            </filter>
-          </defs>
           {leftIsReceiving && (
             <polygon
               points={leftReceivingHaloPoints}
@@ -466,7 +461,6 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
               strokeWidth="2"
               strokeLinejoin="round"
               opacity="0.78"
-              filter="url(#receiving-court-glow)"
             />
           )}
           {rightIsReceiving && (
@@ -477,7 +471,6 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
               strokeWidth="2"
               strokeLinejoin="round"
               opacity="0.78"
-              filter="url(#receiving-court-glow)"
             />
           )}
           <polygon
