@@ -408,10 +408,10 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
   const leftIsReceiving = receivingTeam === leftTeamKey;
   const rightIsReceiving = receivingTeam === rightTeamKey;
   const baseFill = "#f2e3c6";
-  const highlightFill = "#fff3c4";
-  const receivingAccentColor = "#22c55e";
-  const leftStrokeWidth = leftIsReceiving ? 2.8 : 0.9;
-  const rightStrokeWidth = rightIsReceiving ? 2.8 : 0.9;
+  const highlightFill = "#dbeafe";
+  const receivingAccentColor = "#2563eb";
+  const leftStrokeWidth = leftIsReceiving ? 2.3 : 0.9;
+  const rightStrokeWidth = rightIsReceiving ? 2.3 : 0.9;
   const leftFillOpacity = leftIsReceiving ? 1 : 0.78;
   const rightFillOpacity = rightIsReceiving ? 1 : 0.78;
   const courtStrokeColor = "#1f2937";
@@ -455,7 +455,7 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
         <svg viewBox={courtViewBox} className="court-svg">
           <defs>
             <filter id="receiving-court-glow" x="-20%" y="-40%" width="140%" height="180%">
-              <feDropShadow dx="0" dy="0" stdDeviation="2.4" floodColor={receivingAccentColor} floodOpacity="0.48" />
+              <feDropShadow dx="0" dy="0" stdDeviation="1.2" floodColor={receivingAccentColor} floodOpacity="0.28" />
             </filter>
           </defs>
           {leftIsReceiving && (
@@ -463,9 +463,9 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
               points={leftReceivingHaloPoints}
               fill="none"
               stroke={receivingAccentColor}
-              strokeWidth="3.2"
+              strokeWidth="2"
               strokeLinejoin="round"
-              opacity="0.9"
+              opacity="0.78"
               filter="url(#receiving-court-glow)"
             />
           )}
@@ -474,9 +474,9 @@ function CourtView({ match, displayOrder, compact = false, onPlayerTap, liberoTa
               points={rightReceivingHaloPoints}
               fill="none"
               stroke={receivingAccentColor}
-              strokeWidth="3.2"
+              strokeWidth="2"
               strokeLinejoin="round"
-              opacity="0.9"
+              opacity="0.78"
               filter="url(#receiving-court-glow)"
             />
           )}
